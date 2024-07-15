@@ -1,11 +1,11 @@
-import { OrganizationsModule } from '@/routes';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { SupabaseModule } from './auth/supabase/supabase.module';
-import { OrganizationsController } from './routes/organizations/organizations.controller';
+import { OrganizationsModule } from './routes/organizations/organizations.module';
 
 @Module({
   imports: [
@@ -19,9 +19,10 @@ import { OrganizationsController } from './routes/organizations/organizations.co
   ],
   controllers: [
     AppController,
-    AuthController,
-    OrganizationsController
+    AuthController
   ],
-  providers: [],
+  providers: [
+    AppService
+  ],
 })
 export class AppModule { }

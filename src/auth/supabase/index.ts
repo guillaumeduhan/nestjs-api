@@ -31,8 +31,6 @@ export class Supabase {
       this.configService.get('SUPABASE_KEY')
     );
 
-    console.log(this.clientInstance)
-
     // this.clientInstance.auth.setAuth(
     //   ExtractJwt.fromAuthHeaderAsBearerToken()(this.request),
     // );

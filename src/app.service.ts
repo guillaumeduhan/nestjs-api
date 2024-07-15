@@ -2,9 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): any {
+  ping(req: any): any {
     return {
-      status: 200
-    };
+      hello: 'world',
+      date: new Date(),
+      url: req.url,
+      headers: Object.assign({}, req.headers),
+    }
   }
 }

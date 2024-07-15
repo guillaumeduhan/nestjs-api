@@ -32,7 +32,6 @@ export class AuthService {
       }
 
       if (data) {
-        console.log(data)
         const { session } = data;
         const { access_token } = session;
         if (!access_token) return {
@@ -78,14 +77,6 @@ export class AuthService {
 
     } catch (error) {
       throw new NotFoundException('Sign up attempt failed', error.message);
-    }
-  }
-
-  async getMe(body: any) {
-    try {
-      console.log("hello it works")
-    } catch (error) {
-      throw new NotFoundException('Me not found', error.message);
     }
   }
 }
