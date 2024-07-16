@@ -25,5 +25,18 @@ export class OrganizationsController {
   async update(@Request() req, @Param() params:any) {
     return this.organizationsService.update(req, params.id);
   };
+
+  @UseGuards(SupabaseGuard)
+  @Post('organizations/:id/members')
+  async addMember(@Request() req, @Param() params: any) {
+    return this.organizationsService.addMember(req, params.id);
+  };
+
+  @UseGuards(SupabaseGuard)
+  @Patch('organizations/:id/members/:memberId')
+  async updateMember(@Request() req, @Param() params: any) {
+    const { id, memberId } = params;
+    return this.organizationsService.updateMember(req, id, memberId);
+  };
 }
 
