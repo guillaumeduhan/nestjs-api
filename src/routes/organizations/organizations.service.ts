@@ -1,0 +1,124 @@
+import { ROLES } from '@/common/variables/roles';
+import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
+
+@Injectable()
+export class OrganizationsService {
+  constructor(
+    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient
+  ) { }
+
+  async create(req: any) {
+    try {
+      const { body, user } = req;
+      const { name } = body;
+      if (!name) throw new HttpException(
+        {
+          status: 401,
+          error: 'Missing name'
+        },
+        HttpStatus.FORBIDDEN
+      );
+      const { data, error }: any = await this.supabase
+        .from("organizations")
+        .insert({
+          name,
+          user_id: user.sub,
+        })
+        .select()
+        .single()
+
+      if (data) {
+        const { data: inserted, error }: any = await this.supabase
+          .from("organizations_members")
+          .insert({
+            organization_id: data.id,
+            email: user.email,
+            user_id: user.sub,
+            role: 'Administrator'
+          })
+          .select()
+          .single()
+
+        return {
+          ...data,
+          organizations_members: [
+            inserted
+          ]
+        };
+      }
+    } catch (error) {
+      throw new HttpException(
+        error.response,
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+
+  async get(req: any) {
+    try {
+      const { user } = req; // we assume user exist otherwise you never enter here
+      const { data, error }: any = await this.supabase
+        .from("organizations_members")
+        .select("*, organizations(*, organizations_members(*))")
+        .eq("user_id", user.sub)
+
+      if (data) return data.map(item => item.organizations);
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: 400,
+          error: 'Failed to get organizations'
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+
+  async update(req: any, paramId: string) {
+    try {
+      const { user, body } = req;
+      const { data: currentMember }: any = await this.supabase
+        .from('organizations_members')
+        .select('*')
+        .eq('organization_id', paramId)
+        .eq('user_id', user.sub)
+        .single()
+
+      if (!currentMember) throw new HttpException(
+        {
+          status: 403,
+          error: 'User is not member of organization'
+        },
+        HttpStatus.FORBIDDEN
+      );
+
+      const { role } = currentMember;
+
+      if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
+        {
+          status: 403,
+          error: 'User is not administrator'
+        },
+        HttpStatus.FORBIDDEN
+      );
+
+      const { user_id, ...rest } = body; // prevent to change user_id here
+
+      const { data: updated, error }: any = await this.supabase
+        .from("organizations")
+        .update(rest)
+        .eq('id', paramId)
+        .select()
+        .single()
+
+      if (updated) return updated
+    } catch (error) {
+      throw new HttpException(
+        error.response,
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+}

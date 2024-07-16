@@ -1,61 +1,63 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AuthService {
-  private supabase: SupabaseClient
-  constructor() {
-    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
-  }
+  constructor(
+    @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient
+  ) { }
 
   async login(body: any) {
     const { email, password } = body;
-    if (!email || !password) return {
-      status: 401,
-      error: "Unauthorized",
-      message: 'Invalid email or password.'
-    }
+    if (!email || !password) throw new HttpException(
+      {
+        status: 401,
+        error: 'Missing email or password'
+      },
+      HttpStatus.FORBIDDEN
+    );
     try {
-      const { data, error }: any = await this.supabase
+      const { data, error }: any = await this.supabaseClient
         .auth
         .signInWithPassword({
           email,
           password,
         })
 
-      if (error) {
-        return {
-          status: 400,
-          error: "Bad request",
-          message: error.message
-        }
-      }
-
       if (data) {
         const { session } = data;
         const { access_token } = session;
-        if (!access_token) return {
-          status: 400,
-          error: "Bad request",
-          message: 'Missing access token in response.'
-        }
+        if (!access_token) throw new HttpException({
+          status: 401,
+          error: 'No access token provided'
+        }, HttpStatus.FORBIDDEN);
         return {
           access_token
         }
       }
     } catch (error) {
-      throw new NotFoundException('Invalid credentials', error.message);
+      throw new HttpException(
+        {
+          status: 400,
+          error: 'Invalid credentials'
+        },
+        HttpStatus.FORBIDDEN
+      );
     }
   }
 
   async signUp(body: any) {
     const { email, password } = body;
-    if (!email || !password) return {
-      status: 401,
-      message: 'Please enter an email address & a password.'
-    }
+    if (!email || !password) throw new HttpException(
+      {
+        status: 401,
+        error: 'Missing email or password'
+      },
+      HttpStatus.FORBIDDEN
+    );
     try {
-      const { data, error }: any = await this.supabase
+      const { data, error }: any = await this.supabaseClient
         .auth
         .signUp({
           email,
@@ -65,18 +67,23 @@ export class AuthService {
       if (data) {
         const { session } = data;
         const { access_token } = session;
-        if (!access_token) return {
-          status: 400,
-          error: "Bad request",
-          message: 'Missing access token in response.'
-        }
+        if (!access_token) throw new HttpException({
+          status: 401,
+          error: 'No access token provided'
+        }, HttpStatus.FORBIDDEN);
         return {
           access_token
         }
       }
 
     } catch (error) {
-      throw new NotFoundException('Sign up attempt failed', error.message);
+      throw new HttpException(
+        {
+          status: 400,
+          error: 'Signup failed'
+        },
+        HttpStatus.FORBIDDEN
+      );
     }
   }
 }
