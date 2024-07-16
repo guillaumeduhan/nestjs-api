@@ -3,6 +3,10 @@ gt:
 	git commit -m "commit"
 	git push
 
+gm:
+	git checkout main
+	git pull
+
 dev:
 	npm run start:dev
 
