@@ -1,17 +1,20 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { SupabaseModule } from './auth/supabase/supabase.module';
+import { LoggerMiddleware } from './logger.middleware';
+import { supabaseProvider } from './providers/supabase.providers';
+import { OrganizationsController } from './routes/organizations/organizations.controller';
 import { OrganizationsModule } from './routes/organizations/organizations.module';
+import { OrganizationsService } from './routes/organizations/organizations.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['.env.local', '.env'],
-      isGlobal: true,
+      isGlobal: true, // makes ConfigModule globally available
     }),
     AuthModule,
     SupabaseModule,
@@ -19,10 +22,22 @@ import { OrganizationsModule } from './routes/organizations/organizations.module
   ],
   controllers: [
     AppController,
-    AuthController
+    AuthController,
+    OrganizationsController
   ],
   providers: [
-    AppService
+    AppService,
+    OrganizationsService,
+    supabaseProvider
   ],
+  exports: [
+    supabaseProvider
+  ]
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('*');
+  }
+}

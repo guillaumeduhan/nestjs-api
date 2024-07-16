@@ -1,6 +1,4 @@
-
 import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
-
 import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
 import { SetMetadata } from '@nestjs/common';
 import { AuthService } from './auth.service';
