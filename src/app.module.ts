@@ -10,6 +10,7 @@ import { supabaseProvider } from './providers/supabase.providers';
 import { OrganizationsController } from './routes/organizations/organizations.controller';
 import { OrganizationsModule } from './routes/organizations/organizations.module';
 import { OrganizationsService } from './routes/organizations/organizations.service';
+import { AssetsModule } from './routes/assets/assets.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { OrganizationsService } from './routes/organizations/organizations.servi
     }),
     AuthModule,
     SupabaseModule,
-    OrganizationsModule
+    OrganizationsModule,
+    AssetsModule
   ],
   controllers: [
     AppController,
