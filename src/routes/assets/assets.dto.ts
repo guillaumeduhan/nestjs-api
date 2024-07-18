@@ -1,130 +1,126 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsNotEmpty,
+  IsDate,
+} from 'class-validator';
 
 export class CreateAssetDto {
-  @ApiProperty({
-    description: 'Deal ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  deal_id: string;
+  @ApiProperty({ description: 'Legal name of the asset', required: true })
+  @IsString()
+  @IsNotEmpty()
+  legalName: string;
 
-  @ApiProperty({
-    description: 'Location',
-    example: 'San Francisco, CA',
-  })
-  location: string;
+  @ApiProperty({ description: 'Name of the asset', required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
 
-  @ApiProperty({
-    description: 'Security Type',
-    example: 'safe',
-  })
-  security_type: string;
-
-  @ApiProperty({
-    description: 'Company Website',
-    example: 'https://example.com',
-    required: false,
-  })
-  company_website?: string;
-
-  @ApiProperty({
-    description: 'Instrument',
-    example: 'Equity',
-    required: false,
-  })
-  instrument?: string;
-
-  @ApiProperty({
-    description: 'Industry',
-    example: 'Technology',
-    required: false,
-  })
+  @ApiProperty({ description: 'Industry of the asset', required: false })
+  @IsOptional()
+  @IsString()
   industry?: string;
 
   @ApiProperty({
-    description: 'Legal Name',
-    example: 'Example Inc.',
+    description: 'Country location of the asset',
     required: false,
   })
-  legal_name?: string;
+  @IsOptional()
+  @IsString()
+  locationCountry?: string;
 
   @ApiProperty({
-    description: 'Logo URL',
-    example: 'https://example.com/logo.png',
+    description: 'Portfolio company contact name',
     required: false,
   })
-  logo_url?: string;
+  @IsOptional()
+  @IsString()
+  portfolioCompanyContactName?: string;
 
   @ApiProperty({
-    description: 'Name',
-    example: 'Example Asset',
+    description: 'Portfolio company phone number',
     required: false,
   })
-  name?: string;
+  @IsOptional()
+  @IsString()
+  portfolioCompanyPhone?: string;
 
   @ApiProperty({
-    description: 'Notes',
-    example: 'Some notes about the asset',
+    description: 'User ID',
     required: false,
+    type: 'string',
+    format: 'uuid',
   })
-  notes?: string;
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
 
   @ApiProperty({
-    description: 'Offering Type',
-    example: 'IPO',
+    description: 'Address ID',
     required: false,
+    type: 'string',
+    format: 'uuid',
   })
-  offering_type?: string;
+  @IsOptional()
+  @IsUUID()
+  addressId?: string;
 
   @ApiProperty({
-    description: 'Portfolio Company Contact',
-    example: 'John Doe',
+    description: 'Asset type ID',
     required: false,
+    type: 'string',
+    format: 'uuid',
   })
-  portfolio_company_contact?: string;
+  @IsOptional()
+  @IsUUID()
+  assetTypeId?: string;
 
   @ApiProperty({
-    description: 'Portfolio Company Phone',
-    example: '+1-234-567-8900',
+    description: 'Asset subtype ID',
     required: false,
+    type: 'string',
+    format: 'uuid',
   })
-  portfolio_company_phone?: string;
+  @IsOptional()
+  @IsUUID()
+  assetSubtypeId?: string;
 
   @ApiProperty({
-    description: 'Purchase Agreement ID',
-    example: '123e4567-e89b-12d3-a456-426614174001',
+    description: 'Created at timestamp',
     required: false,
+    type: 'string',
+    format: 'date-time',
   })
-  purchase_agreement_id?: string;
-
-  @ApiProperty({ description: 'Status', example: 'draft', required: false })
-  status?: string;
-
-  @ApiProperty({ description: 'Type', example: 'startup', required: false })
-  type?: string;
-
-  @ApiProperty({ description: 'Valuation', example: 1000000, required: false })
-  valuation?: number;
+  @IsOptional()
+  @IsDate()
+  createdAt?: Date;
 
   @ApiProperty({
-    description: 'Valuation Date',
-    example: '2023-01-01T00:00:00.000Z',
+    description: 'Updated at timestamp',
     required: false,
+    type: 'string',
+    format: 'date-time',
   })
-  valuation_date?: Date;
+  @IsOptional()
+  @IsDate()
+  updatedAt?: Date;
 
   @ApiProperty({
-    description: 'Website',
-    example: 'https://example-asset.com',
+    description: 'Deleted at timestamp',
     required: false,
+    type: 'string',
+    format: 'date-time',
   })
-  website?: string;
+  @IsOptional()
+  @IsDate()
+  deletedAt?: Date;
 
-  @ApiProperty({
-    description: 'Wire Instructions ID',
-    example: '123e4567-e89b-12d3-a456-426614174002',
-    required: false,
-  })
-  wire_instructions_id?: string;
+  @ApiProperty({ description: 'Deleted by', required: false })
+  @IsOptional()
+  @IsString()
+  deletedBy?: string;
 }
 
 export class UpdateAssetDto extends PartialType(CreateAssetDto) {}

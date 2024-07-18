@@ -45,7 +45,6 @@ export class AssetsController {
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async createAsset(@Body() assetData: CreateAssetDto) {
     try {
-      this.validateCreateAsset(assetData);
       return await this.assetsService.createAsset(assetData);
     } catch (error) {
       throw new HttpException(
@@ -68,7 +67,6 @@ export class AssetsController {
     @Body() assetData: UpdateAssetDto,
   ) {
     try {
-      this.validateUpdateAsset(assetData);
       return await this.assetsService.updateAsset(id, assetData);
     } catch (error) {
       throw new HttpException(
@@ -78,30 +76,6 @@ export class AssetsController {
     } finally {
       this.logger.log(
         `Finished updateAsset operation for asset id: ${id} with data: ${JSON.stringify(assetData)}`,
-      );
-    }
-  }
-
-  private validateCreateAsset(assetData: CreateAssetDto) {
-    if (!assetData.deal_id) {
-      throw new HttpException('deal_id is required', HttpStatus.BAD_REQUEST);
-    }
-    if (!assetData.location) {
-      throw new HttpException('location is required', HttpStatus.BAD_REQUEST);
-    }
-    if (!assetData.security_type) {
-      throw new HttpException(
-        'security_type is required',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  private validateUpdateAsset(assetData: Partial<CreateAssetDto>) {
-    if (!assetData.deal_id && !assetData.location && !assetData.security_type) {
-      throw new HttpException(
-        'At least one of deal_id, location, or security_type is required',
-        HttpStatus.BAD_REQUEST,
       );
     }
   }
