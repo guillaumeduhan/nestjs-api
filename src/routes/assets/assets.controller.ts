@@ -5,6 +5,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  Logger,
   Param,
   Patch,
   Post,
@@ -17,7 +18,8 @@ import { AssetsService } from './assets.service';
 @ApiTags('assets')
 @Controller('assets')
 export class AssetsController {
-  constructor(private readonly assetsService: AssetsService) { }
+  private readonly logger = new Logger(AssetsController.name);
+  constructor(private readonly assetsService: AssetsService) {}
 
   @UseGuards(SupabaseGuard)
   @Get('assets/:id')
@@ -32,6 +34,8 @@ export class AssetsController {
         error.message,
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    } finally {
+      this.logger.log(`Finished getAssetById operation for Id: ${id}`);
     }
   }
   @UseGuards(SupabaseGuard)
@@ -47,6 +51,10 @@ export class AssetsController {
       throw new HttpException(
         error.message,
         error.status || HttpStatus.BAD_REQUEST,
+      );
+    } finally {
+      this.logger.log(
+        `Finished createAsset operation for asset data: ${JSON.stringify(assetData)}`,
       );
     }
   }
@@ -66,6 +74,10 @@ export class AssetsController {
       throw new HttpException(
         error.message,
         error.status || HttpStatus.BAD_REQUEST,
+      );
+    } finally {
+      this.logger.log(
+        `Finished updateAsset operation for asset id: ${id} with data: ${JSON.stringify(assetData)}`,
       );
     }
   }

@@ -3,7 +3,7 @@ import {
   HttpException,
   HttpStatus,
   Inject,
-  Injectable
+  Injectable,
 } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -11,7 +11,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export class AssetsService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
-  ) { }
+  ) {}
 
   async getAssetById(id: string) {
     const { data, error } = await this.supabase
