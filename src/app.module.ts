@@ -7,10 +7,10 @@ import { AuthModule } from './auth/auth.module';
 import { SupabaseModule } from './auth/supabase/supabase.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { supabaseProvider } from './providers/supabase.providers';
+import { AssetsModule } from './routes/assets/assets.module';
 import { OrganizationsController } from './routes/organizations/organizations.controller';
 import { OrganizationsModule } from './routes/organizations/organizations.module';
 import { OrganizationsService } from './routes/organizations/organizations.service';
-import { AssetsModule } from './routes/assets/assets.module';
 
 @Module({
   imports: [

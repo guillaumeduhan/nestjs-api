@@ -1,3 +1,4 @@
+import { generateTimestamp } from '@/common/helpers/utils';
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import {
   HttpException,
@@ -11,43 +12,143 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export class AssetsService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
-  ) {}
+  ) { }
 
-  async getAssetById(id: string) {
-    const { data, error } = await this.supabase
-      .from('assets')
-      .select('*')
-      .eq('id', id);
-    console.log(data);
-    if (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  async create(req: any) {
+    const { body: asset, user } = req;
+    if (!asset) throw new HttpException(
+      {
+        status: 401,
+        error: 'Missing asset'
+      },
+      HttpStatus.FORBIDDEN
+    );
+    if (!asset.legal_name) throw new HttpException(
+      {
+        status: 401,
+        error: 'Missing legal name'
+      },
+      HttpStatus.FORBIDDEN
+    );
+    try {
+      const { data, error } = await this.supabase
+        .from('assets')
+        .insert({
+          ...asset,
+          user_id: user.sub
+        })
+        .select()
+        .single()
+
+      return data;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to create asset',
+          message: error
+        },
+        HttpStatus.FORBIDDEN
+      );
     }
-    if (!data || data.length === 0) {
-      throw new HttpException('Asset not found', HttpStatus.NOT_FOUND);
-    }
-    return data;
   }
 
-  async createAsset(assetData: any) {
-    const { data, error } = await this.supabase
-      .from('assets')
-      .insert([assetData]);
+  async getAll(req: any) {
+    const { user } = req;
+    try {
+      const { data, error } = await this.supabase
+        .from('assets')
+        .select()
+        .eq("user_id", user.sub)
 
-    if (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      return data;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to get all assets of user',
+          message: error
+        },
+        HttpStatus.FORBIDDEN
+      );
     }
-    return data;
   }
 
-  async updateAsset(id: string, assetData: any) {
-    const { data, error } = await this.supabase
-      .from('assets')
-      .update(assetData)
-      .eq('id', id);
+  async getById(paramId: string, req: any) {
+    try {
+      const { data, error } = await this.supabase
+        .from('assets')
+        .select('*')
+        .eq('id', paramId)
+        .select()
+        .single()
 
-    if (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (!data) {
+        return {
+          status: 200,
+          message: "No assets found"
+        }
+      }
+
+      return data;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to get asset by id',
+          message: error
+        },
+        HttpStatus.FORBIDDEN
+      );
     }
-    return data;
+  }
+
+  async update(req: any, paramId: string) {
+    try {
+      const { body: asset, user } = req;
+      if (!asset) throw new HttpException(
+        {
+          status: 401,
+          error: 'Missing asset'
+        },
+        HttpStatus.FORBIDDEN
+      );
+      if (!asset.user_id) throw new HttpException(
+        {
+          status: 401,
+          error: 'Missing user_id'
+        },
+        HttpStatus.FORBIDDEN
+      );
+      // TODO: here we assume only owner of Asset (user_id) would be able to update the asset (or deal Admin? to determine)
+      if (asset.user_id !== user.sub) throw new HttpException(
+        {
+          status: 403,
+          error: "Unauthorized: user doesn't have permission to update"
+        },
+        HttpStatus.FORBIDDEN
+      );
+      const { id, ...rest } = asset;
+      const { data, error } = await this.supabase
+        .from('assets')
+        .update({
+          ...rest,
+          updated_at: generateTimestamp()
+        })
+        .eq('id', paramId)
+        .select()
+        .single()
+
+      return data;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to update asset',
+          message: error
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
   }
 }

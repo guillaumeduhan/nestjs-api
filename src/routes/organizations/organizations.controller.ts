@@ -11,7 +11,7 @@ export class OrganizationsController {
   @UseGuards(SupabaseGuard)
   @Get('organizations')
   async get(@Request() req) {
-    return this.organizationsService.get(req);
+    return this.organizationsService.getAll(req);
   };
 
   @UseGuards(SupabaseGuard)
