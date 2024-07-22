@@ -70,13 +70,17 @@ export class OrganizationsService {
       }
     } catch (error) {
       throw new HttpException(
-        error.response,
+        {
+          status: error.status,
+          error: 'Failed to create organizations',
+          message: error.message
+        },
         HttpStatus.FORBIDDEN
       );
     }
   }
 
-  async get(req: any) {
+  async getAll(req: any) {
     try {
       const { user } = req; // we assume user exist otherwise you never enter here
       const { data, error }: any = await this.supabase
@@ -88,8 +92,9 @@ export class OrganizationsService {
     } catch (error) {
       throw new HttpException(
         {
-          status: 400,
-          error: 'Failed to get organizations'
+          status: error.status,
+          error: 'Failed to get organizations',
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -123,7 +128,11 @@ export class OrganizationsService {
       if (updated) return updated
     } catch (error) {
       throw new HttpException(
-        error.response,
+        {
+          status: error.status,
+          error: 'Failed to update organizations',
+          message: error.message
+        },
         HttpStatus.FORBIDDEN
       );
     }
@@ -171,8 +180,9 @@ export class OrganizationsService {
     } catch (error) {
       throw new HttpException(
         {
-          status: 400,
-          error: 'Failed to add new member'
+          status: error.status,
+          error: 'Failed to add member',
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -215,8 +225,9 @@ export class OrganizationsService {
     } catch (error) {
       throw new HttpException(
         {
-          status: 400,
-          error: 'Failed to update new member'
+          status: error.status,
+          error: 'Failed to update member',
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );

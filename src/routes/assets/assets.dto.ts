@@ -11,7 +11,7 @@ export class CreateAssetDto {
   @ApiProperty({ description: 'Legal name of the asset', required: true })
   @IsString()
   @IsNotEmpty()
-  legalName: string;
+  legal_name: string;
 
   @ApiProperty({ description: 'Name of the asset', required: false })
   @IsOptional()
@@ -29,7 +29,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsString()
-  locationCountry?: string;
+  location_country?: string;
 
   @ApiProperty({
     description: 'Portfolio company contact name',
@@ -37,7 +37,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsString()
-  portfolioCompanyContactName?: string;
+  portfolio_company_contact_name?: string;
 
   @ApiProperty({
     description: 'Portfolio company phone number',
@@ -45,7 +45,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsString()
-  portfolioCompanyPhone?: string;
+  portfolio_company_phone?: string;
 
   @ApiProperty({
     description: 'User ID',
@@ -55,7 +55,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsUUID()
-  userId?: string;
+  user_id?: string;
 
   @ApiProperty({
     description: 'Address ID',
@@ -65,7 +65,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsUUID()
-  addressId?: string;
+  address_id?: string;
 
   @ApiProperty({
     description: 'Asset type ID',
@@ -75,7 +75,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsUUID()
-  assetTypeId?: string;
+  asset_type_id?: string;
 
   @ApiProperty({
     description: 'Asset subtype ID',
@@ -85,7 +85,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsUUID()
-  assetSubtypeId?: string;
+  asset_subtype_id?: string;
 
   @ApiProperty({
     description: 'Created at timestamp',
@@ -95,7 +95,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsDate()
-  createdAt?: Date;
+  created_at?: Date;
 
   @ApiProperty({
     description: 'Updated at timestamp',
@@ -105,7 +105,7 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsDate()
-  updatedAt?: Date;
+  updated_at?: Date;
 
   @ApiProperty({
     description: 'Deleted at timestamp',
@@ -115,12 +115,12 @@ export class CreateAssetDto {
   })
   @IsOptional()
   @IsDate()
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @ApiProperty({ description: 'Deleted by', required: false })
   @IsOptional()
   @IsString()
-  deletedBy?: string;
+  deleted_by?: string;
 }
 
 export class UpdateAssetDto extends PartialType(CreateAssetDto) {}
