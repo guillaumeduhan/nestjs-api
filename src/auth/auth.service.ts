@@ -1,6 +1,7 @@
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { SignUpDto } from './auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -8,7 +9,7 @@ export class AuthService {
     @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient
   ) { }
 
-  async login(body: any) {
+  async login(body: SignUpDto) {
     const { email, password } = body;
     if (!email || !password) throw new HttpException(
       {
@@ -47,7 +48,7 @@ export class AuthService {
     }
   }
 
-  async signUp(body: any) {
+  async signUp(body: SignUpDto) {
     const { email, password } = body;
     if (!email || !password) throw new HttpException(
       {

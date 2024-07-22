@@ -1,7 +1,9 @@
 import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
-import { Controller, Get, Patch, Post, Request, UseGuards, Param } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 
+@ApiTags('organizations')
 @Controller()
 export class OrganizationsController {
   constructor(
@@ -22,7 +24,7 @@ export class OrganizationsController {
 
   @UseGuards(SupabaseGuard)
   @Patch('organizations/:id')
-  async update(@Request() req, @Param() params:any) {
+  async update(@Request() req, @Param() params: any) {
     return this.organizationsService.update(req, params.id);
   };
 

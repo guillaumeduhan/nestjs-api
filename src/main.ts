@@ -8,14 +8,19 @@ async function bootstrap() {
   // prefix
   app.setGlobalPrefix('v4');
   // swagger
-  const config = new DocumentBuilder()
-    .setTitle('Client-Api-V4')
-    .setDescription('The Client-Api-V4 API description')
-    .setVersion('1.0')
-    .addTag('client-api-v4')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('swagger', app, document);
+  if (process.env.NODE_ENV !== 'production') {
+
+    const config = new DocumentBuilder()
+      .setTitle('Client-Api-V4')
+      .setDescription('The Client-Api-V4 API description')
+      .setVersion('1.0')
+      .addTag('client-api-v4')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
+        'access-token',)
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('swagger', app, document);
+  }
 
   console.log(`APP LAUNCHED AT ${process.env.PORT}`)
   await app.listen(process.env.PORT);
