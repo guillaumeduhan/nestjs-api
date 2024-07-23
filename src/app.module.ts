@@ -12,6 +12,7 @@ import { OrganizationsController } from './routes/organizations/organizations.co
 import { OrganizationsModule } from './routes/organizations/organizations.module';
 import { OrganizationsService } from './routes/organizations/organizations.service';
 import { AddressesModule } from './routes/addresses/addresses.module';
+import { IdentitiesModule } from './routes/identities/identities.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { AddressesModule } from './routes/addresses/addresses.module';
     SupabaseModule,
     OrganizationsModule,
     AssetsModule,
-    AddressesModule
+    AddressesModule,
+    IdentitiesModule
   ],
   controllers: [
     AppController,
