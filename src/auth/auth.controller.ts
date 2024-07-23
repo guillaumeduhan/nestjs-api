@@ -12,16 +12,6 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export class AuthController {
   constructor(private authService: AuthService) { }
 
-  @Post('auth/signup')
-  @ApiOperation({ summary: 'Sign up a new user' })
-  @ApiResponse({ status: 201, description: 'User signed up successfully.' })
-  @ApiResponse({ status: 401, description: 'Missing email or password.' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
-  @ApiBody({ type: SignUpDto })
-  async signup(@Request() req) {
-    return this.authService.signUp(req.body);
-  }
-
   @Post('auth/login')
   @ApiOperation({ summary: 'Login a new user' })
   @ApiResponse({ status: 201, description: 'Logged in successfully.' })
@@ -32,8 +22,22 @@ export class AuthController {
     return this.authService.login(req.body);
   }
 
+  @Post('auth/verify')
+  @ApiOperation({ summary: 'Verify OTP code' })
+  @ApiResponse({ status: 201, description: 'Verification successfully processed.' })
+  @ApiResponse({ status: 401, description: 'Missing code.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @ApiBody({ type: SignUpDto })
+  async verify(@Request() req) {
+    return this.authService.verify(req.body);
+  }
+
   @UseGuards(SupabaseGuard)
   @Get('auth/me')
+  @ApiOperation({ summary: 'Get an existing user' })
+  @ApiResponse({ status: 201, description: 'Get user successfully.' })
+  @ApiResponse({ status: 401, description: 'Missing user.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiOperation({ summary: 'Get current user' })
   getProfile(@Request() req) {
     return req.user;
