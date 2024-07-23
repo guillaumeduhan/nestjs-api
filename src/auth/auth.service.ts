@@ -10,60 +10,60 @@ export class AuthService {
   ) { }
 
   async login(body: SignUpDto) {
-    const { email, password } = body;
-    if (!email || !password) throw new HttpException(
+    const { email } = body;
+    if (!email) throw new HttpException(
       {
         status: 401,
-        error: 'Missing email or password'
+        error: 'Missing'
       },
       HttpStatus.FORBIDDEN
     );
     try {
       const { data, error }: any = await this.supabaseClient
         .auth
-        .signInWithPassword({
+        .signInWithOtp({
           email,
-          password,
+          options: {
+            shouldCreateUser: true
+          }
         })
 
       if (data) {
-        const { session } = data;
-        const { access_token } = session;
-        if (!access_token) throw new HttpException({
-          status: 401,
-          error: 'No access token provided'
-        }, HttpStatus.FORBIDDEN);
         return {
-          access_token
+          status: 200,
+          message: "An email with a code has been sent."
         }
       }
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         {
-          status: 400,
-          error: 'Invalid credentials'
+          status: error.status,
+          error: 'Invalid credentials',
+          message: error
         },
         HttpStatus.FORBIDDEN
       );
     }
   }
 
-  async signUp(body: SignUpDto) {
-    const { email, password } = body;
-    if (!email || !password) throw new HttpException(
+  async verify(body: any) {
+    const { token, email } = body;
+    if (!token || !email) throw new HttpException(
       {
         status: 401,
-        error: 'Missing email or password'
+        error: 'Missing body.'
       },
       HttpStatus.FORBIDDEN
     );
     try {
       const { data, error }: any = await this.supabaseClient
         .auth
-        .signUp({
-          email,
-          password,
-        })
+        .verifyOtp({
+          token,
+          email: email,
+          type: "email",
+        });
 
       if (data) {
         const { session } = data;
@@ -81,7 +81,7 @@ export class AuthService {
       throw new HttpException(
         {
           status: 400,
-          error: 'Signup failed'
+          error: 'Verify OTP failed'
         },
         HttpStatus.FORBIDDEN
       );
