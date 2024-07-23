@@ -143,33 +143,4 @@ export class AddressesService {
       );
     }
   }
-
-  async delete(req: any, paramId: string) {
-    const { user } = req;
-    try {
-      const { data, error } = await this.supabase
-        .from('addresses')
-        .delete()
-        .eq('id', paramId)
-        .eq('user_id', user.sub);
-
-      if (!data) {
-        return {
-          status: 200,
-          message: "No address found to delete"
-        };
-      }
-
-      return data;
-    } catch (error) {
-      throw new HttpException(
-        {
-          status: error.status,
-          error: 'Failed to delete address',
-          message: error
-        },
-        HttpStatus.FORBIDDEN
-      );
-    }
-  }
 }

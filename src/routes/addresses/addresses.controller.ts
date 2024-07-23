@@ -52,13 +52,4 @@ export class AddressesController {
   async update(@Request() req, @Param('id') id: string) {
     return await this.addressesService.update(req, id);
   }
-
-  @UseGuards(SupabaseGuard)
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete an address' })
-  @ApiResponse({ status: 200, description: 'Address deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Address not found' })
-  async delete(@Request() req, @Param('id') id: string) {
-    return await this.addressesService.delete(req, id);
-  }
 }
