@@ -105,6 +105,7 @@ export class IdentitiesService {
   }
 
   async update(req: any, paramId: string) {
+    // we don't check for user here because FM will update the identity also
     try {
       const { body: identity, user } = req;
       if (!identity) throw new HttpException(
@@ -116,15 +117,17 @@ export class IdentitiesService {
       );
       const { id, user_id, to_delete, ...rest } = identity;
       let obj = {
-        ...rest,
-        updated_by: user.sub
+        ...rest
       }
-      obj = identity.to_delete ? { // delete only if to_delete order
+      obj = identity.to_delete ? {
+        // delete only if to_delete order
         ...obj,
         deleted_at: identity.to_delete ? generateTimestamp() : null,
         deleted_by: identity.to_delete ? user.sub : null
-      } : { // we update only if no delete order so we keep last update date
+      } : {
+        // we update only if no delete order so we keep last update date
         ...obj,
+        updated_by: user.sub,
         updated_at: generateTimestamp(),
       }
       const { data, error } = await this.supabase
