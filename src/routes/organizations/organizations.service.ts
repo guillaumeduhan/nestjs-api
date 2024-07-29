@@ -73,7 +73,7 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to create organizations',
-          message: error.message
+          message: error.response.error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -94,7 +94,7 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to get organizations',
-          message: error.message
+          message: error.response.error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -115,7 +115,7 @@ export class OrganizationsService {
         {
           status: error.status,
           error: `Failed to get organization ${paramId}`,
-          message: error.message
+          message: error.response.error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -152,7 +152,7 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to update organizations',
-          message: error.message
+          message: error.response.error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -203,7 +203,7 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to add member',
-          message: error.message
+          message: error.response.error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -248,10 +248,35 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to update member',
-          message: error.message
+          message: error.response.error.message
         },
         HttpStatus.FORBIDDEN
       );
     }
   }
+
+  // identities
+  // async getIdentities(req: any, paramId: string) {
+  //   try {
+  //     const { user } = req;
+  //     const { data, error }: any = await this.supabase
+  //       .from("organizations")
+  //       .select("*, organizations_members(*)")
+  //       .eq("id", paramId)
+
+  //     console.log(data)
+  //     console.log(error)
+
+  //     if (data) return data
+  //   } catch (error) {
+  //     throw new HttpException(
+  //       {
+  //         status: error.status,
+  //         error: 'Failed to get organizations identities',
+  //         message: error.response.error.message
+  //       },
+  //       HttpStatus.FORBIDDEN
+  //     );
+  //   }
+  // }
 }

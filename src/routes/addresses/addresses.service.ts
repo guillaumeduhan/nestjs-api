@@ -39,7 +39,7 @@ export class AddressesService {
         {
           status: error.status,
           error: 'Failed to create address',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -60,7 +60,7 @@ export class AddressesService {
         {
           status: error.status,
           error: 'Failed to get all addresses of user',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -89,7 +89,7 @@ export class AddressesService {
         {
           status: error.status,
           error: 'Failed to get address by id',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -137,7 +137,7 @@ export class AddressesService {
         {
           status: error.status,
           error: 'Failed to update address',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );

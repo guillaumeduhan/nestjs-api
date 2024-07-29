@@ -6,8 +6,7 @@ import {
   Patch,
   Post,
   Request,
-  UseGuards,
-  Delete,
+  UseGuards
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IdentitiesService } from './identities.service';
@@ -15,7 +14,7 @@ import { IdentitiesService } from './identities.service';
 @ApiTags('identities')
 @Controller('identities')
 export class IdentitiesController {
-  constructor(private readonly identitiesService: IdentitiesService) {}
+  constructor(private readonly identitiesService: IdentitiesService) { }
 
   @UseGuards(SupabaseGuard)
   @Post()
