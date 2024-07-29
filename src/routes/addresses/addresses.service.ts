@@ -23,6 +23,13 @@ export class AddressesService {
       },
       HttpStatus.FORBIDDEN
     );
+    if (!address.nickname) throw new HttpException(
+      {
+        status: 401,
+        error: 'Missing address nickname'
+      },
+      HttpStatus.FORBIDDEN
+    );
     try {
       const { data, error } = await this.supabase
         .from('addresses')
@@ -76,13 +83,6 @@ export class AddressesService {
         .select()
         .single();
 
-      if (!data) {
-        return {
-          status: 200,
-          message: "No address found"
-        };
-      }
-
       return data;
     } catch (error) {
       throw new HttpException(
@@ -106,30 +106,35 @@ export class AddressesService {
         },
         HttpStatus.FORBIDDEN
       );
-      if (!address.user_id) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing user_id'
-        },
-        HttpStatus.FORBIDDEN
-      );
-      if (address.user_id !== user.sub) throw new HttpException(
-        {
-          status: 403,
-          error: "Unauthorized: user doesn't have permission to update"
-        },
-        HttpStatus.FORBIDDEN
-      );
-      const { id, ...rest } = address;
+      const { id, user_id, to_delete, ...rest } = address;
+      let obj = {
+        ...rest
+      }
+      obj = address.to_delete ? {
+        ...obj,
+        deleted_at: address.to_delete ? generateTimestamp() : null,
+        deleted_by: address.to_delete ? user.sub : null
+      } : {
+        ...obj,
+        updated_by: user.sub,
+        updated_at: generateTimestamp(),
+      }
       const { data, error } = await this.supabase
         .from('addresses')
-        .update({
-          ...rest,
-          updated_at: generateTimestamp()
-        })
+        .update(obj)
         .eq('id', paramId)
+        .eq('user_id', user.sub)
         .select()
         .single();
+
+      if (error) throw new HttpException(
+        {
+          status: error.code,
+          error: 'Failed to update address',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
 
       return data;
     } catch (error) {
