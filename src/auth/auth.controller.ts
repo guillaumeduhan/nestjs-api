@@ -16,7 +16,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login a new user' })
   @ApiResponse({ status: 201, description: 'Logged in successfully.' })
   @ApiResponse({ status: 401, description: 'Missing email or password.' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @ApiResponse({ status: 403, description: 'Login forbidden.' })
   @ApiBody({ type: SignUpDto })
   async login(@Request() req) {
     return this.authService.login(req.body);

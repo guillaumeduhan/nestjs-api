@@ -28,7 +28,6 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.4.0",
     "@supabase/supabase-js": "^2.44.3",
-    "chalk": "^5.3.0",
     "class-validator": "^0.14.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

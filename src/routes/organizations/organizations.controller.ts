@@ -4,38 +4,44 @@ import { ApiTags } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 
 @ApiTags('organizations')
-@Controller()
+@Controller('organizations')
 export class OrganizationsController {
   constructor(
     private organizationsService: OrganizationsService
   ) { }
 
   @UseGuards(SupabaseGuard)
-  @Get('organizations')
+  @Get()
   async get(@Request() req) {
     return this.organizationsService.getAll(req);
   };
 
   @UseGuards(SupabaseGuard)
-  @Post('organizations')
+  @Get(':id')
+  async getById(@Request() req, @Param() params: any) {
+    return this.organizationsService.getById(req, params.id);
+  };
+
+  @UseGuards(SupabaseGuard)
+  @Post()
   async create(@Request() req) {
     return this.organizationsService.create(req);
   };
 
   @UseGuards(SupabaseGuard)
-  @Patch('organizations/:id')
+  @Patch(':id')
   async update(@Request() req, @Param() params: any) {
     return this.organizationsService.update(req, params.id);
   };
 
   @UseGuards(SupabaseGuard)
-  @Post('organizations/:id/members')
+  @Post(':id/members')
   async addMember(@Request() req, @Param() params: any) {
     return this.organizationsService.addMember(req, params.id);
   };
 
   @UseGuards(SupabaseGuard)
-  @Patch('organizations/:id/members/:memberId')
+  @Patch(':id/members/:memberId')
   async updateMember(@Request() req, @Param() params: any) {
     const { id, memberId } = params;
     return this.organizationsService.updateMember(req, id, memberId);

@@ -82,7 +82,7 @@ export class OrganizationsService {
 
   async getAll(req: any) {
     try {
-      const { user } = req; // we assume user exist otherwise you never enter here
+      const { user } = req;
       const { data, error }: any = await this.supabase
         .from("organizations_members")
         .select("*, organizations(*, organizations_members(*))")
@@ -94,6 +94,27 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to get organizations',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+
+  async getById(req: any, paramId: string) {
+    try {
+      const { data, error }: any = await this.supabase
+        .from("organizations")
+        .select("*, organizations_members(*)")
+        .eq("id", paramId)
+        .single()
+
+      if (data) return data
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: `Failed to get organization ${paramId}`,
           message: error.message
         },
         HttpStatus.FORBIDDEN
