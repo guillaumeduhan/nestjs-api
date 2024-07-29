@@ -46,7 +46,7 @@ export class AssetsService {
         {
           status: error.status,
           error: 'Failed to create asset',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -67,7 +67,7 @@ export class AssetsService {
         {
           status: error.status,
           error: 'Failed to get all assets of user',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -96,7 +96,7 @@ export class AssetsService {
         {
           status: error.status,
           error: 'Failed to get asset by id',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -145,7 +145,7 @@ export class AssetsService {
         {
           status: error.status,
           error: 'Failed to update asset',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );

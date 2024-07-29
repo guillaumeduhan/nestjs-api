@@ -46,5 +46,11 @@ export class OrganizationsController {
     const { id, memberId } = params;
     return this.organizationsService.updateMember(req, id, memberId);
   };
+
+  // @UseGuards(SupabaseGuard)
+  // @Get(':id/identities')
+  // async getIdentities(@Request() req, @Param() params: any) {
+  //   return this.organizationsService.getIdentities(req, params.id);
+  // };
 }
 

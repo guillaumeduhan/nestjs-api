@@ -1,10 +1,10 @@
 import { generateTimestamp } from '@/common/helpers/utils';
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import {
-  Injectable,
   HttpException,
   HttpStatus,
   Inject,
+  Injectable,
 } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -12,7 +12,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export class IdentitiesService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
-  ) {}
+  ) { }
 
   async create(req: any) {
     const { body: identity, user } = req;
@@ -20,6 +20,14 @@ export class IdentitiesService {
       {
         status: 401,
         error: 'Missing identity'
+      },
+      HttpStatus.FORBIDDEN
+    );
+    const { legal_name } = identity;
+    if (!legal_name) throw new HttpException(
+      {
+        status: 401,
+        error: 'Missing identity legal name'
       },
       HttpStatus.FORBIDDEN
     );
@@ -39,7 +47,7 @@ export class IdentitiesService {
         {
           status: error.status,
           error: 'Failed to create identity',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -60,7 +68,7 @@ export class IdentitiesService {
         {
           status: error.status,
           error: 'Failed to get all identities of user',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -89,7 +97,7 @@ export class IdentitiesService {
         {
           status: error.status,
           error: 'Failed to get identity by id',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
@@ -106,30 +114,27 @@ export class IdentitiesService {
         },
         HttpStatus.FORBIDDEN
       );
-      if (!identity.user_id) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing user_id'
-        },
-        HttpStatus.FORBIDDEN
-      );
-      if (identity.user_id !== user.sub) throw new HttpException(
-        {
-          status: 403,
-          error: "Unauthorized: user doesn't have permission to update"
-        },
-        HttpStatus.FORBIDDEN
-      );
-      const { id, ...rest } = identity;
+      const { id, user_id, to_delete, ...rest } = identity;
+      let obj = {
+        ...rest,
+        updated_by: user.sub
+      }
+      obj = identity.to_delete ? { // delete only if to_delete order
+        ...obj,
+        deleted_at: identity.to_delete ? generateTimestamp() : null,
+        deleted_by: identity.to_delete ? user.sub : null
+      } : { // we update only if no delete order so we keep last update date
+        ...obj,
+        updated_at: generateTimestamp(),
+      }
       const { data, error } = await this.supabase
         .from('identities')
-        .update({
-          ...rest,
-          updated_at: generateTimestamp()
-        })
+        .update(obj)
         .eq('id', paramId)
         .select()
         .single();
+
+      if (error) console.log(error);
 
       return data;
     } catch (error) {
@@ -137,7 +142,7 @@ export class IdentitiesService {
         {
           status: error.status,
           error: 'Failed to update identity',
-          message: error
+          message: error.response.error
         },
         HttpStatus.FORBIDDEN
       );
