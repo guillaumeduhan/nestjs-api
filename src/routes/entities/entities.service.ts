@@ -67,33 +67,29 @@ export class EntitiesService {
   async getAll(req: any) {
     try {
       const organizations = await this.organizationsService.getAll(req);
-  
+
       if (!organizations.length) {
         return [];
       }
-  
+
       const organizationIds = organizations.map(org => org.id);
-  
+
       const { data: entities, error } = await this.supabase
         .from('entities')
         .select('*')
         .in('organization_id', organizationIds);
-  
+
       if (error) {
         throw new HttpException(
           {
-            
             error: 'Failed to get entities',
             message: error.message
           },
           HttpStatus.FORBIDDEN
         );
       }
-  
-      return organizations.map(org => ({
-        ...org,
-        entities: entities
-      }));
+
+      return entities
     } catch (error) {
       throw new HttpException(
         {
@@ -105,7 +101,7 @@ export class EntitiesService {
       );
     }
   }
-  
+
 
   async getById(paramId: string, req: any) {
     try {
