@@ -152,13 +152,6 @@ export class EntitiesService {
         },
         HttpStatus.FORBIDDEN
       );
-      if (entity.organization_id !== user.organization_id) throw new HttpException(
-        {
-          status: 403,
-          error: "Unauthorized: user doesn't have permission to update"
-        },
-        HttpStatus.FORBIDDEN
-      );
       const { id, ...rest } = entity;
       const { data, error } = await this.supabase
         .from('entities')
