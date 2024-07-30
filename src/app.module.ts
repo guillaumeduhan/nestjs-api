@@ -13,6 +13,7 @@ import { OrganizationsModule } from './routes/organizations/organizations.module
 import { OrganizationsService } from './routes/organizations/organizations.service';
 import { AddressesModule } from './routes/addresses/addresses.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
+import { EntitiesModule } from './routes/entities/entities.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { IdentitiesModule } from './routes/identities/identities.module';
     OrganizationsModule,
     AssetsModule,
     AddressesModule,
-    IdentitiesModule
+    IdentitiesModule,
+    EntitiesModule
   ],
   controllers: [
     AppController,
