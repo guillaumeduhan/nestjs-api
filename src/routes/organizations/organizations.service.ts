@@ -130,10 +130,7 @@ export class OrganizationsService {
       const { role } = currentMember;
 
       if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-        {
-          status: 403,
-          error: 'User is not administrator'
-        },
+        'User is not administrator',
         HttpStatus.FORBIDDEN
       );
 
@@ -249,6 +246,33 @@ export class OrganizationsService {
           status: error.status,
           error: 'Failed to update member',
           message: error.response.error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+
+  async getMembers(req: any, paramId: string) {
+    try {
+      const { data: members, error }: any = await this.supabase
+        .from("organizations_members")
+        .select('*')
+        .eq("organization_id", paramId)
+
+      console.log(error)
+
+      if (error) throw new HttpException(
+        'Unable to retrieve members',
+        HttpStatus.FORBIDDEN
+      );
+
+      if (members) return members
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to get members',
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
