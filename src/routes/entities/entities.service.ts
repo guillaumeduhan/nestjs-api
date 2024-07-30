@@ -25,12 +25,11 @@ export class EntitiesService {
       },
       HttpStatus.FORBIDDEN
     );
-    const { name, organization_id, user_id } = entity;
-    if (!name || !organization_id || !user_id) {
+    const { name, organization_id } = entity;
+    if (!name || !organization_id) {
       let error;
       if (!name) error = "Missing name";
       if (!organization_id) error = "Missing organization";
-      if (!user_id) error = "Missing user";
       throw new HttpException(
         {
           status: 401,
@@ -44,12 +43,17 @@ export class EntitiesService {
         .from('entities')
         .insert({
           ...entity,
+          user_id: user.sub,
           organization_id: entity.organization_id
         })
         .select()
         .single();
 
-      if (error) console.log(error)
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       console.log(error)
@@ -57,7 +61,7 @@ export class EntitiesService {
         {
           status: error.status,
           error: 'Failed to create entity',
-          message: error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -79,15 +83,10 @@ export class EntitiesService {
         .select('*')
         .in('organization_id', organizationIds);
 
-      if (error) {
-        throw new HttpException(
-          {
-            error: 'Failed to get entities',
-            message: error.message
-          },
-          HttpStatus.FORBIDDEN
-        );
-      }
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       return entities
     } catch (error) {
@@ -141,23 +140,38 @@ export class EntitiesService {
         },
         HttpStatus.FORBIDDEN
       );
-      if (!entity.organization_id) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing organization_id'
-        },
+      // check if user is part of organization
+      // if not error
+      const { id, organization_id, ...rest } = entity;
+      if (!organization_id) throw new HttpException(
+        "Missing organization_id",
         HttpStatus.FORBIDDEN
       );
-      const { id, ...rest } = entity;
+
+      const members = await this.organizationsService.getMembers(req, organization_id);
+
+      const found = members.find(x => x.user_id === req.user.sub);
+
+      if (!found) throw new HttpException(
+        "User is not allowed to update entity",
+        HttpStatus.FORBIDDEN
+      );
+
       const { data, error } = await this.supabase
         .from('entities')
         .update({
           ...rest,
-          updated_at: generateTimestamp()
+          updated_at: generateTimestamp(),
+          updated_by: user.sub
         })
         .eq('id', paramId)
         .select()
         .single();
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       return data;
     } catch (error) {
@@ -165,7 +179,7 @@ export class EntitiesService {
         {
           status: error.status,
           error: 'Failed to update entity',
-          message: error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );

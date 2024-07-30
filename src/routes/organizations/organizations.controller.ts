@@ -35,6 +35,12 @@ export class OrganizationsController {
   };
 
   @UseGuards(SupabaseGuard)
+  @Get(':id/members')
+  async getMembers(@Request() req, @Param() params: any) {
+    return this.organizationsService.getMembers(req, params.id);
+  };
+
+  @UseGuards(SupabaseGuard)
   @Post(':id/members')
   async addMember(@Request() req, @Param() params: any) {
     return this.organizationsService.addMember(req, params.id);
