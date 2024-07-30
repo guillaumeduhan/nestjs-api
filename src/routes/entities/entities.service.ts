@@ -92,7 +92,7 @@ export class EntitiesService {
   
       return organizations.map(org => ({
         ...org,
-        entities: entities.filter(entity => entity.organization_id === org.id),
+        entities: entities
       }));
     } catch (error) {
       throw new HttpException(
