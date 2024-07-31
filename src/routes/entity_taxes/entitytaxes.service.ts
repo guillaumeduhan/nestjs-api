@@ -1,22 +1,19 @@
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { generateTimestamp } from '@/common/helpers/utils';
+import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class EntityTaxesService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
-  ) {}
+  ) { }
 
   async create(req: any) {
     const { body: entitytax, user } = req;
-    if (!entitytax || !entitytax.entity_id) {
+    if (!entitytax) {
       throw new HttpException(
-        {
-          status: 400,
-          error: "Missing required 'entity_id'",
-        },
+        "Missing body",
         HttpStatus.FORBIDDEN,
       );
     }
@@ -34,10 +31,7 @@ export class EntityTaxesService {
 
       if (error) {
         throw new HttpException(
-          {
-            status: 500,
-            error: error.message || 'Failed to create entity tax',
-          },
+          error.message,
           HttpStatus.FORBIDDEN,
         );
       }
@@ -45,8 +39,9 @@ export class EntityTaxesService {
     } catch (error) {
       throw new HttpException(
         {
-          status: 500,
-          error: 'Internal Server Error',
+          status: error.status,
+          error: 'Failed to create entity taxes',
+          message: error.message
         },
         HttpStatus.FORBIDDEN,
       );
@@ -60,24 +55,18 @@ export class EntityTaxesService {
         .select('*')
         .eq('id', paramId)
         .single();
-      if (!data) {
-        throw new HttpException(
-          {
-            status: 404,
-            error: 'Entity tax record not found',
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.NOT_FOUND,
+      );
       return data;
     } catch (error) {
-      throw new HttpException(
-        {
-          status: 500,
-          error: 'Internal Server Error',
-        },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException({
+        status: error.status,
+        error: 'Failed to create entity taxes',
+        message: error.message
+      },
+        HttpStatus.FORBIDDEN);
     }
   }
 
@@ -86,10 +75,7 @@ export class EntityTaxesService {
       const { body: entitytax, user } = req;
       if (!entitytax) {
         throw new HttpException(
-          {
-            status: 401,
-            error: 'Missing entity tax data',
-          },
+          'Missing body',
           HttpStatus.FORBIDDEN,
         );
       }
@@ -97,10 +83,7 @@ export class EntityTaxesService {
       const currentData = await this.getById(paramId, req);
       if (currentData.owner_id !== user.sub) {
         throw new HttpException(
-          {
-            status: 403,
-            error: "Unauthorized: user doesn't have permission to update",
-          },
+          "Unauthorized: user doesn't have permission to update",
           HttpStatus.FORBIDDEN,
         );
       }
@@ -115,25 +98,19 @@ export class EntityTaxesService {
       if (error) {
         console.error('Supabase error:', error.message);
         throw new HttpException(
-          {
-            status: 500,
-            error: error.message || 'Failed to update entity tax',
-          },
+          error.message,
           HttpStatus.FORBIDDEN,
         );
       }
 
       return data;
     } catch (error) {
-      console.error('Update error:', error);
-      throw new HttpException(
-        {
-          status: 500,
-          error: 'Internal Server Error',
-          message: error.message || error.toString(),
-        },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException({
+        status: error.status,
+        error: 'Failed to update entity taxes',
+        message: error.message
+      },
+        HttpStatus.FORBIDDEN);
     }
   }
 }

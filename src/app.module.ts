@@ -14,7 +14,7 @@ import { OrganizationsService } from './routes/organizations/organizations.servi
 import { AddressesModule } from './routes/addresses/addresses.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
 import { EntitiesModule } from './routes/entities/entities.module';
-import { EntitytaxesModule } from './routes/entitytaxes/entitytaxes.module';
+import { EntitytaxesModule } from './routes/entity_taxes/entitytaxes.module';
 
 @Module({
   imports: [
