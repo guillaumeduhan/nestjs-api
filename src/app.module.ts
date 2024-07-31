@@ -10,6 +10,7 @@ import { supabaseProvider } from './providers/supabase.providers';
 import { AddressesModule } from './routes/addresses/addresses.module';
 import { AssetsModule } from './routes/assets/assets.module';
 import { BankAccountsModule } from './routes/bank_accounts/bank_accounts.module';
+import { DealsModule } from './routes/deals/deals.module';
 import { EntitiesModule } from './routes/entities/entities.module';
 import { EntitytaxesModule } from './routes/entity_taxes/entitytaxes.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
@@ -30,7 +31,8 @@ import { OrganizationsService } from './routes/organizations/organizations.servi
     IdentitiesModule,
     EntitiesModule,
     EntitytaxesModule,
-    BankAccountsModule
+    BankAccountsModule,
+    DealsModule
   ],
   controllers: [
     AppController,

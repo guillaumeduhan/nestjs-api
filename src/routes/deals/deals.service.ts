@@ -54,7 +54,6 @@ export class DealsService {
   };
 
   async getAll(req: any) {
-    // deals from user's organizations
     try {
       const organizations = await this.organizationsService.getAll(req);
 
