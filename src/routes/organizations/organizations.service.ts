@@ -9,7 +9,7 @@ export class OrganizationsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient
   ) { }
 
-  // TODO: to remove ,temporary roles solution check
+  // TODO: temporary roles solution check
   async isCurrentMember(user, paramId) {
     const { data: currentMember }: any = await this.supabase
       .from('organizations_members')

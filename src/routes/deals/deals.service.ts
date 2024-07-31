@@ -86,26 +86,48 @@ export class DealsService {
     }
   }
 
-  // async getById(req: any, paramId: string) {
-  //   try {
-  //     const { data, error }: any = await this.supabase
-  //       .from("deals")
-  //       .select("*, deals_members(*)")
-  //       .eq("id", paramId)
-  //       .single()
+  async getById(req: any, paramId: string) {
+    try {
+      const { user } = req;
+      const { data: deal, error }: any = await this.supabase
+        .from("deals")
+        .select("*, organizations(*, organizations_members(*)), entities(*), identities(*)")
+        .eq("id", paramId)
+        .single()
 
-  //     if (data) return data
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       {
-  //         status: error.status,
-  //         error: `Failed to get deal ${paramId}`,
-  //         message: error.message
-  //       },
-  //       HttpStatus.FORBIDDEN
-  //     );
-  //   }
-  // }
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      // if admin = complete deal
+      // if user = partial deal
+      const {
+        organizations,
+        entities,
+        identities,
+        multi_asset,
+        identity_id,
+        signing_date,
+        source,
+        ...partial
+      } = deal;
+      const currentUser = organizations?.organizations_members.find(m => m.user_id === user.sub);
+
+      if (!currentUser) return partial;
+
+      return deal;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: `Failed to get deal ${paramId}`,
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
 
   // async update(req: any, paramId: string) {
   //   try {
