@@ -106,7 +106,7 @@ export class EntitiesService {
     try {
       const { data, error } = await this.supabase
         .from('entities')
-        .select('*')
+        .select('*, organizations(*, organizations_members(*))')
         .eq('id', paramId)
         .single();
 
