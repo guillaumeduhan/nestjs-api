@@ -10,11 +10,11 @@ export class DealsController {
     private dealsService: DealsService
   ) { }
 
-  // @UseGuards(SupabaseGuard)
-  // @Get()
-  // async get(@Request() req) {
-  //   return this.dealsService.getAll(req);
-  // };
+  @UseGuards(SupabaseGuard)
+  @Get()
+  async get(@Request() req) {
+    return this.dealsService.getAll(req);
+  };
 
   @UseGuards(SupabaseGuard)
   @Post()

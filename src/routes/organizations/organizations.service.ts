@@ -19,10 +19,7 @@ export class OrganizationsService {
       .single()
 
     if (!currentMember) throw new HttpException(
-      {
-        status: 403,
-        error: 'User is not member of organization'
-      },
+      'User is not member of organization',
       HttpStatus.FORBIDDEN
     );
 
@@ -116,7 +113,7 @@ export class OrganizationsService {
     try {
       const { data, error }: any = await this.supabase
         .from("organizations")
-        .select("*, organizations_members(*)")
+        .select("*, organizations_members(*), deals(*), entities(*)")
         .eq("id", paramId)
         .single()
 
@@ -142,6 +139,11 @@ export class OrganizationsService {
     try {
       const { user, body } = req;
       const currentMember: any = await this.isCurrentMember(user, paramId);
+
+      if (!currentMember) throw new HttpException(
+        'User is not part of organization',
+        HttpStatus.FORBIDDEN
+      );
 
       const { role } = currentMember;
 
@@ -238,9 +240,9 @@ export class OrganizationsService {
       const currentMember: any = await this.isCurrentMember(user, paramId);
 
       if (!currentMember) throw new HttpException(
-        "User is not member of organization",
+        'User is not part of organization',
         HttpStatus.FORBIDDEN
-      )
+      );
 
       const { role } = currentMember;
 

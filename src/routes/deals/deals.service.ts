@@ -1,29 +1,29 @@
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 @Injectable()
 export class DealsService {
   constructor(
-    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient
+    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
+    private readonly organizationsService: OrganizationsService
   ) { }
 
   async create(req: any) {
     try {
       const { body, user } = req;
+      if (!body) throw new HttpException(
+        "Missing body",
+        HttpStatus.FORBIDDEN
+      );
       const { name, organization_id } = body;
       if (!name) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing name'
-        },
+        'Missing name',
         HttpStatus.FORBIDDEN
       );
       if (!organization_id) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing organization'
-        },
+        'Missing organization',
         HttpStatus.FORBIDDEN
       );
       const { data, error }: any = await this.supabase
@@ -40,7 +40,7 @@ export class DealsService {
         error.message,
         HttpStatus.FORBIDDEN
       );
-
+      return data;
     } catch (error) {
       throw new HttpException(
         {
@@ -51,28 +51,41 @@ export class DealsService {
         HttpStatus.FORBIDDEN
       );
     }
+  };
+
+  async getAll(req: any) {
+    // deals from user's organizations
+    try {
+      const organizations = await this.organizationsService.getAll(req);
+
+      if (!organizations.length) {
+        return [];
+      }
+
+      const dealsIds = organizations.map(org => org.id);
+
+      const { data: deals, error } = await this.supabase
+        .from('deals')
+        .select('*')
+        .in('organization_id', dealsIds);
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return deals
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to get all deals',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
   }
-
-  // async getAll(req: any) {
-  //   try {
-  //     const { user } = req;
-  //     const { data, error }: any = await this.supabase
-  //       .from("deals_members")
-  //       .select("*, deals(*, deals_members(*))")
-  //       .eq("user_id", user.sub)
-
-  //     if (data) return data.map(item => item.deals);
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       {
-  //         status: error.status,
-  //         error: 'Failed to get deals',
-  //         message: error.message
-  //       },
-  //       HttpStatus.FORBIDDEN
-  //     );
-  //   }
-  // }
 
   // async getById(req: any, paramId: string) {
   //   try {
