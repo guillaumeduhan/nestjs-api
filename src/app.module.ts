@@ -14,6 +14,7 @@ import { OrganizationsService } from './routes/organizations/organizations.servi
 import { AddressesModule } from './routes/addresses/addresses.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
 import { EntitiesModule } from './routes/entities/entities.module';
+import { EntitytaxesModule } from './routes/entity_taxes/entitytaxes.module';
 import { BankaccountsModule } from './routes/bank_accounts/bank_accounts.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { BankaccountsModule } from './routes/bank_accounts/bank_accounts.module'
     AddressesModule,
     IdentitiesModule,
     EntitiesModule,
+    EntitytaxesModule
     BankaccountsModule
   ],
   controllers: [
