@@ -105,11 +105,9 @@ export class EntityTaxesService {
         );
       }
 
-      // Remove the reference to updated_by and any other non-existing fields
-      const updatesToApply = { ...entitytax, updated_at: generateTimestamp() }; // Only include fields that exist in your database
       const { data, error } = await this.supabase
         .from('entity_taxes')
-        .update(updatesToApply)
+        .update({ ...entitytax, updated_at: generateTimestamp() })
         .eq('id', paramId)
         .select()
         .single();
