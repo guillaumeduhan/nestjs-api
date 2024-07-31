@@ -23,6 +23,12 @@ export class OrganizationsController {
   };
 
   @UseGuards(SupabaseGuard)
+  @Get('check/:userId')
+  async checkMembership(@Request() req, @Param() params: any) {
+    return this.organizationsService.checkMembership(req, params.id);
+  };
+
+  @UseGuards(SupabaseGuard)
   @Post()
   async create(@Request() req) {
     return this.organizationsService.create(req);

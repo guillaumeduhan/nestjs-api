@@ -10,20 +10,37 @@ export class OrganizationsService {
   ) { }
 
   // TODO: temporary roles solution check
-  async isCurrentMember(user, paramId) {
-    const { data: currentMember }: any = await this.supabase
-      .from('organizations_members')
-      .select('*')
-      .eq('organization_id', paramId)
-      .eq('user_id', user.sub)
-      .single()
+  async checkMembership(req: any, paramId: string) {
+    const { user } = req;
+    try {
+      const { data: currentMember, error }: any = await this.supabase
+        .from('organizations_members')
+        .select('*')
+        .eq('organization_id', paramId)
+        .eq('user_id', user.sub)
+        .single()
 
-    if (!currentMember) throw new HttpException(
-      'User is not member of organization',
-      HttpStatus.FORBIDDEN
-    );
+      if (!error) throw new HttpException(
+        'User could not be found',
+        HttpStatus.NOT_FOUND
+      );
 
-    return currentMember
+      if (!currentMember) throw new HttpException(
+        'User is not member of organization',
+        HttpStatus.NOT_FOUND
+      );
+
+      return currentMember
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Membership not found',
+          message: error.message
+        },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
   async create(req: any) {
@@ -138,7 +155,7 @@ export class OrganizationsService {
   async update(req: any, paramId: string) {
     try {
       const { user, body } = req;
-      const currentMember: any = await this.isCurrentMember(user, paramId);
+      const currentMember: any = await this.checkMembership(user, paramId);
 
       if (!currentMember) throw new HttpException(
         'User is not part of organization',
@@ -188,7 +205,7 @@ export class OrganizationsService {
         HttpStatus.FORBIDDEN
       );
 
-      const currentMember: any = await this.isCurrentMember(user, paramId);
+      const currentMember: any = await this.checkMembership(user, paramId);
 
       if (!currentMember) throw new HttpException(
         "User is not member of organization",
@@ -237,7 +254,7 @@ export class OrganizationsService {
   async updateMember(req: any, paramId: string, memberId: string) {
     try {
       const { user, body } = req;
-      const currentMember: any = await this.isCurrentMember(user, paramId);
+      const currentMember: any = await this.checkMembership(user, paramId);
 
       if (!currentMember) throw new HttpException(
         'User is not part of organization',
