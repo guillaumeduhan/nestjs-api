@@ -11,28 +11,21 @@ export class BankaccountsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private entitiesService: EntitiesService,
     private organizationService: OrganizationsService,
-  ) {}
+  ) { }
 
   async create(req: any) {
     const { body: bankaccount, user } = req;
-    if (!bankaccount)
-      throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing bank account',
-        },
-        HttpStatus.FORBIDDEN,
-      );
+    if (!bankaccount) throw new HttpException(
+      'Missing body',
+      HttpStatus.FORBIDDEN,
+    );
     const { account_name, entity_id } = bankaccount;
     if (!account_name || !entity_id) {
       let error;
-      if (!account_name) error = 'Missing account name';
       if (!entity_id) error = 'Missing entity id';
+      if (!account_name) error = 'Missing account name';
       throw new HttpException(
-        {
-          status: 401,
-          error,
-        },
+        error,
         HttpStatus.FORBIDDEN,
       );
     }
@@ -51,7 +44,6 @@ export class BankaccountsService {
 
       return data;
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         {
           status: error.status,
@@ -61,7 +53,28 @@ export class BankaccountsService {
         HttpStatus.FORBIDDEN,
       );
     }
-  }
+  };
+
+  async getAll(req: any) {
+    try {
+      const entities = await this.entitiesService.getAll(req);
+
+      if (!entities.length) {
+        return [];
+      }
+
+      return entities.map(entity => entity.bank_accounts).flat() || []
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to get bank accounts from entities',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  };
 
   async getById(paramId: string, req: any) {
     try {
@@ -78,18 +91,21 @@ export class BankaccountsService {
         {
           status: error.status,
           error: 'Failed to get bank account by id',
-          message: error,
+          message: error.message,
         },
         HttpStatus.FORBIDDEN,
       );
     }
-  }
+  };
 
   async update(req: any, paramId: string) {
+    // bank_account: only user can update for now — security precaution
     try {
       const { body: bankaccount, user } = req;
-      if (!bankaccount)
-        throw new HttpException('Missing body', HttpStatus.FORBIDDEN);
+      if (!bankaccount) throw new HttpException('Missing body', HttpStatus.FORBIDDEN);
+
+      if (bankaccount.user != user.sub) throw new HttpException('User is not allowed to update bank_account because he is not the owner', HttpStatus.FORBIDDEN);
+
       const { id, organization_id, entity_id, ...rest } = bankaccount;
 
       if (!organization_id)
@@ -119,6 +135,7 @@ export class BankaccountsService {
         .update({
           ...rest,
           updated_at: generateTimestamp(),
+          updated_by: user.sub
         })
         .eq('id', paramId)
         .select()
@@ -128,14 +145,11 @@ export class BankaccountsService {
 
       return data;
     } catch (error) {
-      throw new HttpException(
-        {
-          status: error.status,
-          error: 'Failed to update bank account',
-          message: error.message,
-        },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException({
+        status: error.status,
+        error: 'Failed to update bank account',
+        message: error.message,
+      }, HttpStatus.FORBIDDEN);
     }
-  }
+  };
 }

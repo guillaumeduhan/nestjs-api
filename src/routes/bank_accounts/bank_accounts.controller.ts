@@ -14,7 +14,19 @@ import { BankaccountsService } from './bank_accounts.service';
 @ApiTags('bank_accounts')
 @Controller('bank_accounts')
 export class BankaccountsController {
-  constructor(private readonly bankaccountService: BankaccountsService) {}
+  constructor(private readonly bankaccountService: BankaccountsService) { }
+
+  @UseGuards(SupabaseGuard)
+  @Get()
+  @ApiOperation({ summary: 'Get all my bank accounts' })
+  @ApiResponse({
+    status: 201,
+    description: 'Bank account get successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async get(@Request() req) {
+    return await this.bankaccountService.getAll(req);
+  }
 
   @UseGuards(SupabaseGuard)
   @Post()
