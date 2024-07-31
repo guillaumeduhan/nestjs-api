@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { BankaccountsService } from './bankaccounts.service';
+import { BankaccountsService } from './bank_accounts.service';
 
 @ApiTags('bank_accounts')
 @Controller('bank_accounts')

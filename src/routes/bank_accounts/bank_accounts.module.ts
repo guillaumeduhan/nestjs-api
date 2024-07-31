@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { BankaccountsController } from './bankaccounts.controller';
-import { BankaccountsService } from './bankaccounts.service';
+import { BankaccountsController } from './bank_accounts.controller';
+import { BankaccountsService } from './bank_accounts.service';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseModule } from '@/auth/supabase/supabase.module';
 import { EntitiesService } from '../entities/entities.service';

@@ -14,7 +14,7 @@ import { OrganizationsService } from './routes/organizations/organizations.servi
 import { AddressesModule } from './routes/addresses/addresses.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
 import { EntitiesModule } from './routes/entities/entities.module';
-import { BankaccountsModule } from './routes/bankaccounts/bankaccounts.module';
+import { BankaccountsModule } from './routes/bank_accounts/bank_accounts.module';
 
 @Module({
   imports: [
