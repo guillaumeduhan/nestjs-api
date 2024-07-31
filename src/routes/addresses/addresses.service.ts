@@ -17,17 +17,11 @@ export class AddressesService {
   async create(req: any) {
     const { body: address, user } = req;
     if (!address) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing address'
-      },
+      'Missing address',
       HttpStatus.FORBIDDEN
     );
     if (!address.nickname) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing address nickname'
-      },
+      'Missing address nickname',
       HttpStatus.FORBIDDEN
     );
     try {
@@ -46,7 +40,7 @@ export class AddressesService {
         {
           status: error.status,
           error: 'Failed to create address',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -61,13 +55,18 @@ export class AddressesService {
         .select()
         .eq("user_id", user.sub);
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to get all addresses of user',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -83,13 +82,18 @@ export class AddressesService {
         .select()
         .single();
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to get address by id',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -100,10 +104,7 @@ export class AddressesService {
     try {
       const { body: address, user } = req;
       if (!address) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing address'
-        },
+        "Missing address",
         HttpStatus.FORBIDDEN
       );
       const { id, user_id, to_delete, ...rest } = address;
@@ -128,11 +129,7 @@ export class AddressesService {
         .single();
 
       if (error) throw new HttpException(
-        {
-          status: error.code,
-          error: 'Failed to update address',
-          message: error.message
-        },
+        error.message,
         HttpStatus.FORBIDDEN
       );
 
@@ -142,7 +139,7 @@ export class AddressesService {
         {
           status: error.status,
           error: 'Failed to update address',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );

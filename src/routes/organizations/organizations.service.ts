@@ -31,13 +31,9 @@ export class OrganizationsService {
 
   async create(req: any) {
     try {
-      const { body, user } = req;
-      const { name } = body;
+      const { body: { name }, user } = req;
       if (!name) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing name'
-        },
+        "Missing name",
         HttpStatus.FORBIDDEN
       );
       const { data, error }: any = await this.supabase
@@ -48,6 +44,11 @@ export class OrganizationsService {
         })
         .select()
         .single()
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       if (data) {
         const { data: inserted, error }: any = await this.supabase
@@ -61,6 +62,11 @@ export class OrganizationsService {
           .select()
           .single()
 
+        if (error) throw new HttpException(
+          error.message,
+          HttpStatus.FORBIDDEN
+        );
+
         return {
           ...data,
           organizations_members: [
@@ -73,7 +79,7 @@ export class OrganizationsService {
         {
           status: error.status,
           error: 'Failed to create organizations',
-          message: error.response.error.message
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -88,13 +94,18 @@ export class OrganizationsService {
         .select("*, organizations(*, organizations_members(*))")
         .eq("user_id", user.sub)
 
-      if (data) return data.map(item => item.organizations);
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return data.map(item => item.organizations);
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to get organizations',
-          message: error.response.error.message
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -109,13 +120,18 @@ export class OrganizationsService {
         .eq("id", paramId)
         .single()
 
-      if (data) return data
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return data
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: `Failed to get organization ${paramId}`,
-          message: error.response.error.message
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -143,13 +159,18 @@ export class OrganizationsService {
         .select()
         .single()
 
-      if (updated) return updated
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return updated
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to update organizations',
-          message: error.response.error.message
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -160,23 +181,22 @@ export class OrganizationsService {
   async addMember(req: any, paramId: string) {
     try {
       const { user, body } = req;
+      if (!body) throw new HttpException(
+        "Missing body",
+        HttpStatus.FORBIDDEN
+      );
+
       const currentMember: any = await this.isCurrentMember(user, paramId);
+
+      if (!currentMember) throw new HttpException(
+        "User is not member of organization",
+        HttpStatus.FORBIDDEN
+      )
 
       const { role } = currentMember;
 
       if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-        {
-          status: 403,
-          error: 'User is not administrator'
-        },
-        HttpStatus.FORBIDDEN
-      );
-
-      if (!body) throw new HttpException(
-        {
-          status: 401,
-          error: 'No body provided'
-        },
+        "User is not a administrator",
         HttpStatus.FORBIDDEN
       );
 
@@ -194,13 +214,18 @@ export class OrganizationsService {
         .select()
         .single()
 
-      if (inserted) return inserted
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return inserted
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to add member',
-          message: error.response.error.message
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -212,21 +237,15 @@ export class OrganizationsService {
       const { user, body } = req;
       const currentMember: any = await this.isCurrentMember(user, paramId);
 
+      if (!currentMember) throw new HttpException(
+        "User is not member of organization",
+        HttpStatus.FORBIDDEN
+      )
+
       const { role } = currentMember;
 
       if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-        {
-          status: 403,
-          error: 'User is not administrator'
-        },
-        HttpStatus.FORBIDDEN
-      );
-
-      if (!body) throw new HttpException(
-        {
-          status: 401,
-          error: 'No body provided'
-        },
+        "User is not a administrator",
         HttpStatus.FORBIDDEN
       );
 
@@ -239,13 +258,18 @@ export class OrganizationsService {
         .select()
         .single()
 
-      if (updated) return updated
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return updated
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to update member',
-          message: error.response.error.message
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -259,14 +283,12 @@ export class OrganizationsService {
         .select('*')
         .eq("organization_id", paramId)
 
-      console.log(error)
-
       if (error) throw new HttpException(
-        'Unable to retrieve members',
+        error.message,
         HttpStatus.FORBIDDEN
       );
 
-      if (members) return members
+      return members
     } catch (error) {
       throw new HttpException(
         {
@@ -278,29 +300,4 @@ export class OrganizationsService {
       );
     }
   }
-
-  // identities
-  // async getIdentities(req: any, paramId: string) {
-  //   try {
-  //     const { user } = req;
-  //     const { data, error }: any = await this.supabase
-  //       .from("organizations")
-  //       .select("*, organizations_members(*)")
-  //       .eq("id", paramId)
-
-  //     console.log(data)
-  //     console.log(error)
-
-  //     if (data) return data
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       {
-  //         status: error.status,
-  //         error: 'Failed to get organizations identities',
-  //         message: error.response.error.message
-  //       },
-  //       HttpStatus.FORBIDDEN
-  //     );
-  //   }
-  // }
 }

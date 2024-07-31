@@ -17,17 +17,11 @@ export class AssetsService {
   async create(req: any) {
     const { body: asset, user } = req;
     if (!asset) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing asset'
-      },
+      "Missing body",
       HttpStatus.FORBIDDEN
     );
     if (!asset.legal_name) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing legal name'
-      },
+      "Missing legal name",
       HttpStatus.FORBIDDEN
     );
     try {
@@ -40,13 +34,18 @@ export class AssetsService {
         .select()
         .single()
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to create asset',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -61,13 +60,18 @@ export class AssetsService {
         .select()
         .eq("user_id", user.sub)
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to get all assets of user',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -83,12 +87,10 @@ export class AssetsService {
         .select()
         .single()
 
-      if (!data) {
-        return {
-          status: 200,
-          message: "No assets found"
-        }
-      }
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       return data;
     } catch (error) {
@@ -96,7 +98,7 @@ export class AssetsService {
         {
           status: error.status,
           error: 'Failed to get asset by id',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -107,25 +109,15 @@ export class AssetsService {
     try {
       const { body: asset, user } = req;
       if (!asset) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing asset'
-        },
+        "Missing body",
         HttpStatus.FORBIDDEN
       );
       if (!asset.user_id) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing user_id'
-        },
+        "Missing user_id",
         HttpStatus.FORBIDDEN
       );
-      // TODO: here we assume only owner of Asset (user_id) would be able to update the asset (or deal Admin? to determine)
       if (asset.user_id !== user.sub) throw new HttpException(
-        {
-          status: 403,
-          error: "Unauthorized: user doesn't have permission to update"
-        },
+        "Unauthorized: user doesn't have permission to update",
         HttpStatus.FORBIDDEN
       );
       const { id, ...rest } = asset;
@@ -139,13 +131,18 @@ export class AssetsService {
         .select()
         .single()
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to update asset',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
