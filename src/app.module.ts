@@ -15,6 +15,7 @@ import { AddressesModule } from './routes/addresses/addresses.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
 import { EntitiesModule } from './routes/entities/entities.module';
 import { EntitytaxesModule } from './routes/entity_taxes/entitytaxes.module';
+import { BankAccountsModule } from './routes/bank_accounts/bank_accounts.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { EntitytaxesModule } from './routes/entity_taxes/entitytaxes.module';
     AddressesModule,
     IdentitiesModule,
     EntitiesModule,
-    EntitytaxesModule
+    EntitytaxesModule,
+    BankAccountsModule
   ],
   controllers: [
     AppController,
