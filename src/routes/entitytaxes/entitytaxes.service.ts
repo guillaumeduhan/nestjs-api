@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
+import { generateTimestamp } from '@/common/helpers/utils';
 
 @Injectable()
 export class EntityTaxesService {
@@ -8,9 +9,9 @@ export class EntityTaxesService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) {}
 
-  async create(req: any, entityTaxData: any) {
-    const { user } = req;
-    if (!entityTaxData.entity_id) {
+  async create(req: any) {
+    const { body: entitytax, user } = req;
+    if (!entitytax || !entitytax.entity_id) {
       throw new HttpException(
         {
           status: 400,
@@ -20,13 +21,16 @@ export class EntityTaxesService {
       );
     }
 
-    entityTaxData.owner_id = user.sub;
-
     try {
       const { data, error } = await this.supabase
         .from('entity_taxes')
-        .insert([entityTaxData])
-        .select('*');
+        .insert({
+          ...entitytax,
+          owner_id: user.sub,
+          created_at: generateTimestamp(),
+        })
+        .select('*')
+        .single();
 
       if (error) {
         throw new HttpException(
@@ -49,20 +53,20 @@ export class EntityTaxesService {
     }
   }
 
-  async getById(id: string) {
+  async getById(paramId: string, req: any) {
     try {
       const { data, error } = await this.supabase
         .from('entity_taxes')
         .select('*')
-        .eq('id', id)
+        .eq('id', paramId)
         .single();
-      if (error) {
+      if (!data) {
         throw new HttpException(
           {
             status: 404,
             error: 'Entity tax record not found',
           },
-          HttpStatus.FORBIDDEN,
+          HttpStatus.NOT_FOUND,
         );
       }
       return data;
@@ -77,50 +81,41 @@ export class EntityTaxesService {
     }
   }
 
-  async update(id: string, updates: any, req: any) {
-    const { user } = req;
-    const entityTax = await this.getById(id);
-
-    if (!entityTax) {
-      throw new HttpException(
-        {
-          status: 404,
-          error: 'Entity tax not found',
-        },
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    if (entityTax.owner_id !== user.sub) {
-      throw new HttpException(
-        {
-          status: 403,
-          error: "Unauthorized: user doesn't have permission to update",
-        },
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    const updatesToApply = Object.keys(updates).reduce((acc, key) => {
-      if (updates[key] !== entityTax[key]) {
-        acc[key] = updates[key];
-      }
-      return acc;
-    }, {});
-
-    if (Object.keys(updatesToApply).length === 0) {
-      return { message: 'No changes detected', status: 204 };
-    }
-
+  async update(paramId: string, req: any) {
     try {
+      const { body: entitytax, user } = req;
+      if (!entitytax) {
+        throw new HttpException(
+          {
+            status: 401,
+            error: 'Missing entity tax data',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const currentData = await this.getById(paramId, req);
+      if (currentData.owner_id !== user.sub) {
+        throw new HttpException(
+          {
+            status: 403,
+            error: "Unauthorized: user doesn't have permission to update",
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      // Remove the reference to updated_by and any other non-existing fields
+      const updatesToApply = { ...entitytax, updated_at: generateTimestamp() }; // Only include fields that exist in your database
       const { data, error } = await this.supabase
         .from('entity_taxes')
         .update(updatesToApply)
-        .eq('id', id)
+        .eq('id', paramId)
         .select()
         .single();
 
       if (error) {
+        console.error('Supabase error:', error.message);
         throw new HttpException(
           {
             status: 500,
@@ -132,10 +127,12 @@ export class EntityTaxesService {
 
       return data;
     } catch (error) {
+      console.error('Update error:', error);
       throw new HttpException(
         {
           status: 500,
           error: 'Internal Server Error',
+          message: error.message || error.toString(),
         },
         HttpStatus.FORBIDDEN,
       );
