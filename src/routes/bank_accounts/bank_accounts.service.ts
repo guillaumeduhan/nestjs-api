@@ -101,14 +101,15 @@ export class BankaccountsService {
       if (!entity_id)
         throw new HttpException('Missing entity_id', HttpStatus.FORBIDDEN);
 
-      const members = await this.organizationService.getMembers(
-        req,
-        organization_id,
-      );
+      const [members, entityDetails] = await Promise.all([
+        this.organizationService.getMembers(req, organization_id),
+        this.entitiesService.getById(req,entity_id)
+    ]);
 
-      const found = members.find((x) => x.user_id === req.user.sub);
+      const isOrgMember = members.find((x) => x.user_id === req.user.sub);
+      const isEntityUser = entityDetails.find((x) => x.user_id === req.user.sub);
 
-      if (!found)
+      if (!isOrgMember || isEntityUser)
         throw new HttpException(
           'User is not allowed to update entity',
           HttpStatus.FORBIDDEN,
