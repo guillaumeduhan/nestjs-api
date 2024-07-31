@@ -19,10 +19,7 @@ export class EntitiesService {
   async create(req: any) {
     const { body: entity, user } = req;
     if (!entity) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing entity'
-      },
+      "Missing body",
       HttpStatus.FORBIDDEN
     );
     const { name, organization_id } = entity;
@@ -31,10 +28,7 @@ export class EntitiesService {
       if (!name) error = "Missing name";
       if (!organization_id) error = "Missing organization";
       throw new HttpException(
-        {
-          status: 401,
-          error
-        },
+        error,
         HttpStatus.FORBIDDEN
       );
     }
@@ -110,12 +104,10 @@ export class EntitiesService {
         .eq('id', paramId)
         .single();
 
-      if (!data) {
-        return {
-          status: 200,
-          message: "No entity found"
-        };
-      }
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       return data;
     } catch (error) {
@@ -134,15 +126,11 @@ export class EntitiesService {
     try {
       const { body: entity, user } = req;
       if (!entity) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing entity'
-        },
+        "Missing body",
         HttpStatus.FORBIDDEN
       );
-      // check if user is part of organization
-      // if not error
       const { id, organization_id, ...rest } = entity;
+
       if (!organization_id) throw new HttpException(
         "Missing organization_id",
         HttpStatus.FORBIDDEN

@@ -17,18 +17,12 @@ export class IdentitiesService {
   async create(req: any) {
     const { body: identity, user } = req;
     if (!identity) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing identity'
-      },
+      "Missing body",
       HttpStatus.FORBIDDEN
     );
     const { legal_name } = identity;
     if (!legal_name) throw new HttpException(
-      {
-        status: 401,
-        error: 'Missing identity legal name'
-      },
+      "Missing legal name",
       HttpStatus.FORBIDDEN
     );
     try {
@@ -41,13 +35,18 @@ export class IdentitiesService {
         .select()
         .single();
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to create identity',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -62,13 +61,18 @@ export class IdentitiesService {
         .select()
         .eq("user_id", user.sub);
 
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
       return data;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
           error: 'Failed to get all identities of user',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -84,12 +88,10 @@ export class IdentitiesService {
         .select()
         .single();
 
-      if (!data) {
-        return {
-          status: 200,
-          message: "No identity found"
-        };
-      }
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       return data;
     } catch (error) {
@@ -97,7 +99,7 @@ export class IdentitiesService {
         {
           status: error.status,
           error: 'Failed to get identity by id',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
@@ -109,10 +111,7 @@ export class IdentitiesService {
     try {
       const { body: identity, user } = req;
       if (!identity) throw new HttpException(
-        {
-          status: 401,
-          error: 'Missing identity'
-        },
+        "Missing body",
         HttpStatus.FORBIDDEN
       );
       const { id, user_id, to_delete, ...rest } = identity;
@@ -120,12 +119,10 @@ export class IdentitiesService {
         ...rest
       }
       obj = identity.to_delete ? {
-        // delete only if to_delete order
         ...obj,
         deleted_at: identity.to_delete ? generateTimestamp() : null,
         deleted_by: identity.to_delete ? user.sub : null
       } : {
-        // we update only if no delete order so we keep last update date
         ...obj,
         updated_by: user.sub,
         updated_at: generateTimestamp(),
@@ -137,7 +134,10 @@ export class IdentitiesService {
         .select()
         .single();
 
-      if (error) console.log(error);
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
       return data;
     } catch (error) {
@@ -145,7 +145,7 @@ export class IdentitiesService {
         {
           status: error.status,
           error: 'Failed to update identity',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );

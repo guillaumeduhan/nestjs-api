@@ -40,7 +40,7 @@ export class AuthService {
         {
           status: error.status,
           error: 'Invalid credentials',
-          message: error.response.error
+          message: error.message
         },
         HttpStatus.FORBIDDEN
       );
