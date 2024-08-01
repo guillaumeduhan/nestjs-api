@@ -128,7 +128,7 @@ export class EntitiesService {
         "Missing body",
         HttpStatus.FORBIDDEN
       );
-      const { id, organization_id, ...rest } = entity;
+      const { id, ...rest } = entity;
 
       if (!organization_id) throw new HttpException(
         "Missing organization_id",
