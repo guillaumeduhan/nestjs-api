@@ -1,5 +1,5 @@
 import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
-import { Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DealsService } from './deals.service';
 
@@ -43,5 +43,17 @@ export class DealsController {
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async getById(@Request() req, @Param() params) {
     return this.dealsService.getById(req, params.id);
+  };
+
+  @UseGuards(SupabaseGuard)
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update deal by id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Deal updated successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async update(@Request() req, @Param() params) {
+    return this.dealsService.update(req, params.id);
   };
 }

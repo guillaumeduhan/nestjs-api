@@ -1,3 +1,5 @@
+import { generateTimestamp } from '@/common/helpers/utils';
+import { ROLES } from '@/common/variables/roles';
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -129,37 +131,70 @@ export class DealsService {
     }
   }
 
-  // async update(req: any, paramId: string) {
-  //   try {
-  //     const { user, body } = req;
-  //     const currentMember: any = await this.isCurrentMember(user, paramId);
+  async update(req: any, paramId: string) {
+    try {
+      const { user, body } = req;
 
-  //     const { role } = currentMember;
+      if (!body) throw new HttpException(
+        "Missing body",
+        HttpStatus.FORBIDDEN
+      );
 
-  //     if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-  //       'User is not administrator',
-  //       HttpStatus.FORBIDDEN
-  //     );
+      const { data: deal, error }: any = await this.supabase
+        .from("deals")
+        .select("*")
+        .eq('id', paramId)
+        .single()
 
-  //     const { user_id, ...rest } = body; // prevent to change user_id here
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
 
-  //     const { data: updated, error }: any = await this.supabase
-  //       .from("deals")
-  //       .update(rest)
-  //       .eq('id', paramId)
-  //       .select()
-  //       .single()
+      const { organization_id } = deal;
 
-  //     if (updated) return updated
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       {
-  //         status: error.status,
-  //         error: 'Failed to update deals',
-  //         message: error.message
-  //       },
-  //       HttpStatus.FORBIDDEN
-  //     );
-  //   }
-  // }
+      const currentMember: any = await this.organizationsService.checkMembership(req, organization_id);
+
+      if (!currentMember) throw new HttpException(
+        "User is not member of organization",
+        HttpStatus.FORBIDDEN
+      )
+
+      const { role } = currentMember;
+
+      if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
+        "User is not an administrator",
+        HttpStatus.FORBIDDEN
+      );
+
+      const { id, user_id, created_at, updated_at, updated_by, ...rest } = body;
+
+      const { data: updated, error: updateError }: any = await this.supabase
+        .from("deals")
+        .update({
+          ...rest,
+          updated_at: generateTimestamp(),
+          updated_by: user.sub
+        })
+        .eq('id', paramId)
+        .select()
+        .single()
+
+      if (updateError) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return updated
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: `Failed to update deal ${paramId}`,
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
 }

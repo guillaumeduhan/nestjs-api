@@ -20,7 +20,7 @@ export class OrganizationsService {
         .eq('user_id', user.sub)
         .single()
 
-      if (!error) throw new HttpException(
+      if (error) throw new HttpException(
         'User could not be found',
         HttpStatus.NOT_FOUND
       );
@@ -155,7 +155,7 @@ export class OrganizationsService {
   async update(req: any, paramId: string) {
     try {
       const { user, body } = req;
-      const currentMember: any = await this.checkMembership(user, paramId);
+      const currentMember: any = await this.checkMembership(req, paramId);
 
       if (!currentMember) throw new HttpException(
         'User is not part of organization',
@@ -205,7 +205,7 @@ export class OrganizationsService {
         HttpStatus.FORBIDDEN
       );
 
-      const currentMember: any = await this.checkMembership(user, paramId);
+      const currentMember: any = await this.checkMembership(req, paramId);
 
       if (!currentMember) throw new HttpException(
         "User is not member of organization",
@@ -254,7 +254,7 @@ export class OrganizationsService {
   async updateMember(req: any, paramId: string, memberId: string) {
     try {
       const { user, body } = req;
-      const currentMember: any = await this.checkMembership(user, paramId);
+      const currentMember: any = await this.checkMembership(req, paramId);
 
       if (!currentMember) throw new HttpException(
         'User is not part of organization',
