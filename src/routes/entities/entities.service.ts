@@ -130,12 +130,12 @@ export class EntitiesService {
       );
       const { id, ...rest } = entity;
 
-      if (!organization_id) throw new HttpException(
+      if (!entity.organization_id) throw new HttpException(
         "Missing organization_id",
         HttpStatus.FORBIDDEN
       );
 
-      const members = await this.organizationsService.getMembers(req, organization_id);
+      const members = await this.organizationsService.getMembers(req, entity.organization_id);
 
       const found = members.find(x => x.user_id === req.user.sub);
 
