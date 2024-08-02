@@ -18,6 +18,7 @@ import { OrganizationsController } from './routes/organizations/organizations.co
 import { OrganizationsModule } from './routes/organizations/organizations.module';
 import { OrganizationsService } from './routes/organizations/organizations.service';
 import { InvestmentsModule } from './routes/investments/investments.module';
+import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identities_kyc_checks.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { InvestmentsModule } from './routes/investments/investments.module';
     EntitytaxesModule,
     BankAccountsModule,
     DealsModule,
-    InvestmentsModule
+    InvestmentsModule,
+    IdentitiesKycChecksModule
   ],
   controllers: [
     AppController,
