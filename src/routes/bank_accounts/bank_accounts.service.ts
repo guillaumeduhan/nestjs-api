@@ -63,7 +63,9 @@ export class BankaccountsService {
         return [];
       }
 
-      return entities.map(entity => entity.bank_accounts).flat() || []
+      return entities.map(({ bank_account }) => bank_account)
+        .filter(bank_account => bank_account !== null && bank_account !== undefined)
+        .flat() || []
     } catch (error) {
       throw new HttpException(
         {
