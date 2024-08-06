@@ -23,7 +23,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Get all my documents' })
   @ApiResponse({ status: 201, description: 'Documents retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
-  async getAll(@Request() req) {
+  async getAllDealsFiles(@Request() req) {
     return await this.documentsService.getAllDealsFiles(req);
   }
 
@@ -33,7 +33,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Upload a new document' })
   @ApiResponse({ status: 201, description: 'Document uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
-  async upload(@Request() req, @UploadedFile() file: Express.Multer.File) {
+  async uploadDealsFiles(@Request() req, @UploadedFile() file: Express.Multer.File) {
     req.body.file = file;
     return await this.documentsService.uploadFileDeals(req);
   }
@@ -43,7 +43,37 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Get document by ID' })
   @ApiResponse({ status: 200, description: 'Document found' })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  async getById(@Request() req, @Param('id') id: string) {
-    return await this.documentsService.getByIdDealsFiles(id, req);
+  async getDealsFilesById(@Request() req, @Param('id') id: string) {
+    return await this.documentsService.getDealsFilesById(id, req);
+  }
+
+  // for identites
+  @UseGuards(SupabaseGuard)
+  @Post('/identities_files')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload a new identity file' })
+  @ApiResponse({ status: 201, description: 'Identity file uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async uploadIdentitiesFiles(@Request() req, @UploadedFile() file: Express.Multer.File) {
+    req.body.file = file;
+    return await this.documentsService.identitiesUploadFile(req);
+  }
+
+  @UseGuards(SupabaseGuard)
+  @Get('/identities_files')
+  @ApiOperation({ summary: 'Get all files for a specific identity' })
+  @ApiResponse({ status: 200, description: 'Identity files retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Identity files not found' })
+  async getAllIdentitiesFiles(@Request() req) {
+    return await this.documentsService.getAllIdentitiesFiles(req);
+  }
+
+  @UseGuards(SupabaseGuard)
+  @Get('/identities_files/:id')
+  @ApiOperation({ summary: 'Get an identity file by ID' })
+  @ApiResponse({ status: 200, description: 'Identity file found' })
+  @ApiResponse({ status: 404, description: 'Identity file not found' })
+  async getIdentitiesFilesById(@Request() req, @Param('id') id: string) {
+    return await this.documentsService.getIdentitiesFileById(id, req);
   }
 }
