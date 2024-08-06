@@ -19,10 +19,9 @@ export class BankaccountsService {
       'Missing body',
       HttpStatus.FORBIDDEN,
     );
-    const { account_name, entity_id } = bankaccount;
-    if (!account_name || !entity_id) {
+    const { account_name } = bankaccount;
+    if (!account_name) {
       let error;
-      if (!entity_id) error = 'Missing entity id';
       if (!account_name) error = 'Missing account name';
       throw new HttpException(
         error,
@@ -34,8 +33,7 @@ export class BankaccountsService {
         .from('bank_accounts')
         .insert({
           ...bankaccount,
-          user_id: user.sub,
-          entity_id: bankaccount.entity_id,
+          user_id: user.sub
         })
         .select()
         .single();
@@ -108,16 +106,13 @@ export class BankaccountsService {
 
       if (bankaccount.user != user.sub) throw new HttpException('User is not allowed to update bank_account because he is not the owner', HttpStatus.FORBIDDEN);
 
-      const { id, organization_id, entity_id, ...rest } = bankaccount;
+      const { id, organization_id, ...rest } = bankaccount;
 
       if (!organization_id)
         throw new HttpException(
           'Missing organization_id',
           HttpStatus.FORBIDDEN,
         );
-
-      if (!entity_id)
-        throw new HttpException('Missing entity_id', HttpStatus.FORBIDDEN);
 
       const members = await this.organizationService.getMembers(
         req,
@@ -128,7 +123,7 @@ export class BankaccountsService {
 
       if (!found)
         throw new HttpException(
-          'User is not allowed to update entity',
+          'User is not allowed to update bank account',
           HttpStatus.FORBIDDEN,
         );
 
