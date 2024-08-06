@@ -10,7 +10,7 @@ export class DocumentsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) {}
 
-  async uploadFile(req: any) {
+  async uploadFileDeals(req: any) {
     const { body: document, user } = req;
     if (!document)
       throw new HttpException('Missing body', HttpStatus.FORBIDDEN);
@@ -62,7 +62,7 @@ export class DocumentsService {
     }
   }
 
-  async getAll(req: any) {
+  async getAllDealsFiles(req: any) {
     const { user } = req;
     try {
       const { data, error } = await this.supabase
@@ -84,7 +84,7 @@ export class DocumentsService {
     }
   }
 
-  async getById(paramId: string, req: any) {
+  async getByIdDealsFiles(paramId: string, req: any) {
     try {
       const { data, error } = await this.supabase
         .from('deals_files')

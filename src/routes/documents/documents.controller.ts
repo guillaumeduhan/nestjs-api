@@ -24,7 +24,7 @@ export class DocumentsController {
   @ApiResponse({ status: 201, description: 'Documents retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async getAll(@Request() req) {
-    return await this.documentsService.getAll(req);
+    return await this.documentsService.getAllDealsFiles(req);
   }
 
   @UseGuards(SupabaseGuard)
@@ -35,7 +35,7 @@ export class DocumentsController {
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async upload(@Request() req, @UploadedFile() file: Express.Multer.File) {
     req.body.file = file;
-    return await this.documentsService.uploadFile(req);
+    return await this.documentsService.uploadFileDeals(req);
   }
 
   @UseGuards(SupabaseGuard)
@@ -44,6 +44,6 @@ export class DocumentsController {
   @ApiResponse({ status: 200, description: 'Document found' })
   @ApiResponse({ status: 404, description: 'Document not found' })
   async getById(@Request() req, @Param('id') id: string) {
-    return await this.documentsService.getById(id, req);
+    return await this.documentsService.getByIdDealsFiles(id, req);
   }
 }
