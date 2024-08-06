@@ -55,20 +55,30 @@ export class BankaccountsService {
 
   async getAll(req: any) {
     try {
-      const entities = await this.entitiesService.getAll(req);
+      const organizations = await this.organizationService.getAll(req);
 
-      if (!entities.length) {
+      if (!organizations.length) {
         return [];
       }
 
-      return entities.map(({ bank_account }) => bank_account)
-        .filter(bank_account => bank_account !== null && bank_account !== undefined)
-        .flat() || []
+      const organizationIds = organizations.map(org => org.id);
+
+      const { data: bankAccounts, error } = await this.supabase
+        .from('bank_accounts')
+        .select('*, organizations(*)')
+        .in('organization_id', organizationIds);
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return bankAccounts
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
-          error: 'Failed to get bank accounts from entities',
+          error: 'Failed to get bank accounts.',
           message: error.message
         },
         HttpStatus.FORBIDDEN
