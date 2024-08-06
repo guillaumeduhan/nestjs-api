@@ -19,7 +19,7 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @UseGuards(SupabaseGuard)
-  @Get()
+  @Get('/deals_files')
   @ApiOperation({ summary: 'Get all my documents' })
   @ApiResponse({ status: 201, description: 'Documents retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
@@ -28,7 +28,7 @@ export class DocumentsController {
   }
 
   @UseGuards(SupabaseGuard)
-  @Post()
+  @Post('/deals_files')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload a new document' })
   @ApiResponse({ status: 201, description: 'Document uploaded successfully' })
@@ -39,7 +39,7 @@ export class DocumentsController {
   }
 
   @UseGuards(SupabaseGuard)
-  @Get(':id')
+  @Get('/deals_files:id')
   @ApiOperation({ summary: 'Get document by ID' })
   @ApiResponse({ status: 200, description: 'Document found' })
   @ApiResponse({ status: 404, description: 'Document not found' })
