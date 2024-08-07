@@ -93,9 +93,12 @@ export class DealsService {
       const { user } = req;
       const { data: deal, error }: any = await this.supabase
         .from("deals")
-        .select("*, organizations(*, organizations_members(*)), entities(*), identities(*)")
+        .select("*, organizations(*, entities(*), organizations_members(*)), entities(*, organizations(*)), identities(*)")
         .eq("id", paramId)
         .single()
+
+      console.log(error)
+      console.log(deal)
 
       if (error) throw new HttpException(
         error.message,
