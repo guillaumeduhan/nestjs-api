@@ -8,6 +8,7 @@ import {
   UseGuards,
   UploadedFile,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -20,11 +21,11 @@ export class DocumentsController {
 
   @UseGuards(SupabaseGuard)
   @Get('/deals_files')
-  @ApiOperation({ summary: 'Get all my documents' })
+  @ApiOperation({ summary: 'Get all files for a specific deal' })
   @ApiResponse({ status: 201, description: 'Documents retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
-  async getAllDealsFiles(@Request() req) {
-    return await this.documentsService.getAllDealsFiles(req);
+  async getAllDealsFiles(@Request() req, @Query('deal_id') dealId: string) {
+    return await this.documentsService.getAllDealsFiles(req, dealId);
   }
 
   @UseGuards(SupabaseGuard)
@@ -64,8 +65,8 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Get all files for a specific identity' })
   @ApiResponse({ status: 200, description: 'Identity files retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Identity files not found' })
-  async getAllIdentitiesFiles(@Request() req) {
-    return await this.documentsService.getAllIdentitiesFiles(req);
+  async getAllIdentitiesFiles(@Request() req, @Query('identity_id') identityId: string) {
+    return await this.documentsService.getAllIdentitiesFiles(req, identityId);
   }
 
   @UseGuards(SupabaseGuard)

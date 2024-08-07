@@ -61,13 +61,14 @@ export class DocumentsService {
     }
   }
 
-  async getAllDealsFiles(req: any) {
+  async getAllDealsFiles(req: any, dealId: string) {
     const { user } = req;
     try {
       const { data, error } = await this.supabase
         .from('deals_files')
         .select('*')
-        .eq('user_id', user.sub);
+        .eq('user_id', user.sub)
+        .eq('deal_id', dealId);
 
       if (error) throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       return data;
@@ -82,6 +83,7 @@ export class DocumentsService {
       );
     }
   }
+
 
   async getDealsFilesById(paramId: string, req: any) {
     try {
@@ -158,13 +160,14 @@ export class DocumentsService {
     }
   }
 
-  async getAllIdentitiesFiles(req: any) {
+  async getAllIdentitiesFiles(req: any, ideantityId: string) {
     const { user } = req;
     try {
       const { data, error } = await this.supabase
         .from('identities_files')
         .select('*')
         .eq('user_id', user.sub)
+        .eq('identity_id', ideantityId)
 
       if (error) throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       return data;
