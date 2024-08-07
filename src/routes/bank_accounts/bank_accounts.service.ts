@@ -114,7 +114,7 @@ export class BankaccountsService {
       const { body: bankaccount, user } = req;
       if (!bankaccount) throw new HttpException('Missing body', HttpStatus.FORBIDDEN);
 
-      if (bankaccount.user != user.sub) throw new HttpException('User is not allowed to update bank_account because he is not the owner', HttpStatus.FORBIDDEN);
+      if (bankaccount.user_id != user.sub) throw new HttpException('User is not allowed to update bank_account because he is not the owner', HttpStatus.FORBIDDEN);
 
       const { id, organization_id, ...rest } = bankaccount;
 

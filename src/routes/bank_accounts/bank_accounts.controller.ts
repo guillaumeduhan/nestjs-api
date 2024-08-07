@@ -51,8 +51,8 @@ export class BankaccountsController {
 
   @UseGuards(SupabaseGuard)
   @Patch(':id')
-  @ApiOperation({ summary: 'Update an existing entity' })
-  @ApiResponse({ status: 200, description: 'Entity updated successfully' })
+  @ApiOperation({ summary: 'Update an existing bank account' })
+  @ApiResponse({ status: 200, description: 'Bank account updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async update(@Request() req, @Param('id') id: string) {
     return await this.bankaccountService.update(req, id);
