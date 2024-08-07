@@ -90,7 +90,7 @@ export class BankaccountsService {
     try {
       const { data, error } = await this.supabase
         .from('bank_accounts')
-        .select('*')
+        .select('*, entities(*)')
         .eq('id', paramId)
         .single();
 
