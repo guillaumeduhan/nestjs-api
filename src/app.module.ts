@@ -19,6 +19,7 @@ import { OrganizationsModule } from './routes/organizations/organizations.module
 import { OrganizationsService } from './routes/organizations/organizations.service';
 import { InvestmentsModule } from './routes/investments/investments.module';
 import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identities_kyc_checks.module';
+import { DocumentsModule } from './routes/documents/documents.module';
 
 @Module({
   imports: [
@@ -36,7 +37,8 @@ import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identi
     BankAccountsModule,
     DealsModule,
     InvestmentsModule,
-    IdentitiesKycChecksModule
+    IdentitiesKycChecksModule,
+    DocumentsModule
   ],
   controllers: [
     AppController,
