@@ -50,7 +50,6 @@ export class EntitiesService {
 
       return data;
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         {
           status: error.status,

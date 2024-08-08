@@ -7,7 +7,7 @@ export class InvestmentsService {
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
     private readonly organizationsService: OrganizationsService,
-  ) {}
+  ) { }
 
   async create(req: any) {
     const { body: investments, user } = req;
@@ -33,7 +33,6 @@ export class InvestmentsService {
 
       return data;
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         {
           status: error.status,

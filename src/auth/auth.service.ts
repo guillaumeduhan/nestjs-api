@@ -35,7 +35,6 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         {
           status: error.status,
