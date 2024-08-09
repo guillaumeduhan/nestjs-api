@@ -5,10 +5,10 @@
 // import { EntitiesService } from '../entities/entities.service';
 // import { OrganizationsService } from '../organizations/organizations.service';
 
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 import * as FormData from 'form-data';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Deposit {
   deposit_type: string;
@@ -18,7 +18,7 @@ export interface Deposit {
 }
 
 @Injectable()
-export class ApplicationService {
+export class BankAccountService {
   private axiosClient: AxiosInstance;
   private token: string | null = null;
   private tokenExpireTime: Date | null = null;

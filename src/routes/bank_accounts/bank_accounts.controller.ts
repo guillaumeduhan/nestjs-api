@@ -1,39 +1,24 @@
-// import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
-// import {
-//   Controller,
-//   Get,
-//   Param,
-//   Patch,
-//   Post,
-//   Request,
-//   UseGuards,
-// } from '@nestjs/common';
-// import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-// import { BankaccountsService } from './bank_accounts.service';
-
+import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
   Patch,
   Post,
-  Request,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
-  Body,
+  UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApplicationService, Deposit } from './bank_accounts.service';
-import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
-
+import { BankAccountService, Deposit } from './bank_accounts.service';
 
 @ApiTags('Layer 2 USD Banking')
 @Controller('layer2')
 export class Layer2Controller {
-  constructor(private readonly applicationService: ApplicationService) {}
+  constructor(private readonly applicationService: BankAccountService) { }
 
   @UseGuards(SupabaseGuard)
   @Delete('/applications/:id/individual/:individualId')
