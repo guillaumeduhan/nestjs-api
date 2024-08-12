@@ -20,6 +20,7 @@ import { OrganizationsService } from './routes/organizations/organizations.servi
 import { InvestmentsModule } from './routes/investments/investments.module';
 import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identities_kyc_checks.module';
 import { DocumentsModule } from './routes/documents/documents.module';
+import { CryptoWalletsModule } from './routes/crypto_wallets/crypto_wallets.module';
 
 @Module({
   imports: [
@@ -38,7 +39,8 @@ import { DocumentsModule } from './routes/documents/documents.module';
     DealsModule,
     InvestmentsModule,
     IdentitiesKycChecksModule,
-    DocumentsModule
+    DocumentsModule,
+    CryptoWalletsModule
   ],
   controllers: [
     AppController,
