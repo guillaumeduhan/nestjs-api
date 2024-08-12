@@ -1,11 +1,7 @@
-// import { generateTimestamp } from '@/common/helpers/utils';
-// import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
-// import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-// import { SupabaseClient } from '@supabase/supabase-js';
-// import { EntitiesService } from '../entities/entities.service';
-// import { OrganizationsService } from '../organizations/organizations.service';
-
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { generateTimestamp } from '@/common/helpers/utils';
+import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
 import axios, { AxiosInstance } from 'axios';
 import * as FormData from 'form-data';
 import { v4 as uuidv4 } from 'uuid';
