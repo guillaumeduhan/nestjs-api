@@ -7,7 +7,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export class CryptoWalletsService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
-  ) {}
+  ) { }
 
   async create(req: any) {
     const { body: wallet, user } = req;
@@ -55,7 +55,6 @@ export class CryptoWalletsService {
         .from('wallets')
         .select('*')
         .eq('user_id', user.sub)
-        .eq('deal_id', dealId);
 
       if (error) throw new HttpException(error.message, HttpStatus.FORBIDDEN);
 
