@@ -10,17 +10,18 @@ import { supabaseProvider } from './providers/supabase.providers';
 import { AddressesModule } from './routes/addresses/addresses.module';
 import { AssetsModule } from './routes/assets/assets.module';
 import { BankAccountsModule } from './routes/bank_accounts/bank_accounts.module';
+import { CryptoWalletsModule } from './routes/crypto_wallets/crypto_wallets.module';
 import { DealsModule } from './routes/deals/deals.module';
+import { DocumentsModule } from './routes/documents/documents.module';
 import { EntitiesModule } from './routes/entities/entities.module';
 import { EntitytaxesModule } from './routes/entity_taxes/entitytaxes.module';
+import { FilesModule } from './routes/files/files.module';
 import { IdentitiesModule } from './routes/identities/identities.module';
+import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identities_kyc_checks.module';
+import { InvestmentsModule } from './routes/investments/investments.module';
 import { OrganizationsController } from './routes/organizations/organizations.controller';
 import { OrganizationsModule } from './routes/organizations/organizations.module';
 import { OrganizationsService } from './routes/organizations/organizations.service';
-import { InvestmentsModule } from './routes/investments/investments.module';
-import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identities_kyc_checks.module';
-import { DocumentsModule } from './routes/documents/documents.module';
-import { CryptoWalletsModule } from './routes/crypto_wallets/crypto_wallets.module';
 import { SignersModule } from './routes/signers/signers.module';
 
 @Module({
@@ -42,6 +43,7 @@ import { SignersModule } from './routes/signers/signers.module';
     IdentitiesKycChecksModule,
     DocumentsModule,
     CryptoWalletsModule,
+    FilesModule,
     SignersModule
   ],
   controllers: [
