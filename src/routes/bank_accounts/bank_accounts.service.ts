@@ -19,7 +19,9 @@ export class BankAccountService {
   private token: string | null = null;
   private tokenExpireTime: Date | null = null;
 
-  constructor() {
+  constructor(
+    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
+  ) {
     this.axiosClient = axios.create({
       baseURL: process.env.LAYER2_TEST_BASE_URL,
     });
@@ -74,7 +76,25 @@ export class BankAccountService {
           'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
         },
       });
-      return response.data;
+
+      const application = response.data;
+
+      const { data: bankingApp, error: supabaseError } = await this.supabase
+        .from('banking_applications')
+        .insert({
+          id: application.id, 
+          user_id: applicationData.user_id,
+          created_at: generateTimestamp(),
+          status: application.status,
+          ...applicationData
+        })
+        .single();
+
+      if (supabaseError) {
+        throw new HttpException(supabaseError.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
+      return application;
     } catch (error) {
       console.error('Error creating application:', error);
       throw new HttpException('Failed to create application', HttpStatus.INTERNAL_SERVER_ERROR);
