@@ -21,6 +21,7 @@ import { InvestmentsModule } from './routes/investments/investments.module';
 import { IdentitiesKycChecksModule } from './routes/identities_kyc_checks/identities_kyc_checks.module';
 import { DocumentsModule } from './routes/documents/documents.module';
 import { CryptoWalletsModule } from './routes/crypto_wallets/crypto_wallets.module';
+import { SignersModule } from './routes/signers/signers.module';
 
 @Module({
   imports: [
@@ -40,7 +41,8 @@ import { CryptoWalletsModule } from './routes/crypto_wallets/crypto_wallets.modu
     InvestmentsModule,
     IdentitiesKycChecksModule,
     DocumentsModule,
-    CryptoWalletsModule
+    CryptoWalletsModule,
+    SignersModule
   ],
   controllers: [
     AppController,
