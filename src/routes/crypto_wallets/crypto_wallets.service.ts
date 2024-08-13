@@ -53,7 +53,7 @@ export class CryptoWalletsService {
 
       const { data: wallets, error } = await this.supabase
         .from('wallets')
-        .select('*')
+        .select('*, deals(*)')
         .eq('user_id', user.sub)
 
       if (error) throw new HttpException(error.message, HttpStatus.FORBIDDEN);
