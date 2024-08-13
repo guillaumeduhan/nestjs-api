@@ -1,7 +1,7 @@
 import { SupabaseGuard } from '@/auth/supabase/supabase.guard';
-import { Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { SignersService } from '@/routes/signers/signers.service';
+import { Controller, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SignersService } from './signers.service';
 
 @ApiTags('signers')
 @Controller('signers')
@@ -11,14 +11,8 @@ export class SignersController {
   ) { }
 
   @UseGuards(SupabaseGuard)
-  @Post()
-  async create(@Request() req) {
-    return this.signersService.create(req);
+  @Post(':id')
+  async update(@Request() req, @Param() params: any) {
+    return this.signersService.update(req, params.id);
   };
-
-  // @UseGuards(SupabaseGuard)
-  // @Get(':id')
-  // async getById(@Request() req, @Param() params: any) {
-  //   return this.organizationsService.getById(req, params.id);
-  // };
 }
