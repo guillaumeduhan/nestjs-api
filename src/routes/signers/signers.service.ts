@@ -1,51 +1,31 @@
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { IdentitiesService } from '../identities/identities.service';
 
 @Injectable()
 export class SignersService {
   constructor(
-    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient
+    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
+    private readonly identitiesServices: IdentitiesService
   ) { }
 
-  async create(req: any) {
+  async update(req: any, identityId: string) {
     try {
       const { body, user } = req;
-      if (!body) throw new HttpException(
-        "Missing body",
+      const { signer_id } = body;
+      if (!signer_id) throw new HttpException(
+        "Missing signer id",
         HttpStatus.NO_CONTENT
       );
-      const { parent_identity_id, child_identity_id } = body;
-      if (!parent_identity_id || !child_identity_id) {
-        let error;
-        if (!child_identity_id) error = "Missing child identity id."
-        if (!parent_identity_id) error = "Missing parent identity id."
-        throw new HttpException(
-          error,
-          HttpStatus.NO_CONTENT
-        )
-      }
-      const { data, error }: any = await this.supabase
-        .from("signers")
-        .insert({
-          name,
-          ...body,
-          user_id: user.sub,
-        })
-        .select()
-        .single()
+      const updated = this.identitiesServices.update(req, identityId);
 
-      if (error) throw new HttpException(
-        error.message,
-        HttpStatus.FORBIDDEN
-      );
-
-      return data;
+      return updated;
     } catch (error) {
       throw new HttpException(
         {
           status: error.status,
-          error: 'Failed to create signer',
+          error: 'Failed to update signer on identity ' + identityId,
           message: error.message
         },
         HttpStatus.FORBIDDEN

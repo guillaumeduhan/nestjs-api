@@ -58,7 +58,7 @@ export class IdentitiesService {
     try {
       const { data, error } = await this.supabase
         .from('identities')
-        .select()
+        .select('*, signer_id(*)')
         .eq("user_id", user.sub);
 
       if (error) throw new HttpException(
@@ -83,9 +83,8 @@ export class IdentitiesService {
     try {
       const { data, error } = await this.supabase
         .from('identities')
-        .select('*')
+        .select('*, signer_id(*)')
         .eq('id', paramId)
-        .select()
         .single();
 
       if (error) throw new HttpException(
