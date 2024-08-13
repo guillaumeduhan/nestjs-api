@@ -29,6 +29,7 @@ export class SignersService {
         .from("signers")
         .insert({
           name,
+          ...body,
           user_id: user.sub,
         })
         .select()
