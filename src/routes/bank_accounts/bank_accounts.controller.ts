@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors
@@ -15,8 +16,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BankAccountService, Deposit } from './bank_accounts.service';
 
-@ApiTags('Layer 2 USD Banking')
-@Controller('layer2')
+@ApiTags('Bank Accounts Layer 2')
+@Controller('bank_accounts')
 export class Layer2Controller {
   constructor(private readonly applicationService: BankAccountService) { }
 
@@ -110,10 +111,10 @@ export class Layer2Controller {
   }
 
   @UseGuards(SupabaseGuard)
-  @Post('/create-application')
+  @Post('/create_application')
   @ApiOperation({ summary: 'Create a new application' })
   @ApiResponse({ status: 200, description: 'Application created successfully' })
-  async createApplication(@Body() applicationData: any): Promise<any> {
-    return await this.applicationService.createApplication(applicationData);
+  async createApplication(@Body() applicationData: any, @Req() req): Promise<any> {
+    return await this.applicationService.createApplication(applicationData, req);
   }
 }

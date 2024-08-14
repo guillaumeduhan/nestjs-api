@@ -1,11 +1,7 @@
-// import { generateTimestamp } from '@/common/helpers/utils';
-// import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
-// import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-// import { SupabaseClient } from '@supabase/supabase-js';
-// import { EntitiesService } from '../entities/entities.service';
-// import { OrganizationsService } from '../organizations/organizations.service';
-
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { generateTimestamp } from '@/common/helpers/utils';
+import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { SupabaseClient } from '@supabase/supabase-js';
 import axios, { AxiosInstance } from 'axios';
 import * as FormData from 'form-data';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,20 +19,28 @@ export class BankAccountService {
   private token: string | null = null;
   private tokenExpireTime: Date | null = null;
 
-  constructor() {
+  constructor(
+    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
+  ) {
     this.axiosClient = axios.create({
       baseURL: process.env.LAYER2_TEST_BASE_URL,
     });
   }
 
   private async getOAuthToken(): Promise<string | null> {
-    if (this.token && this.tokenExpireTime && new Date() < this.tokenExpireTime) {
+    if (
+      this.token &&
+      this.tokenExpireTime &&
+      new Date() < this.tokenExpireTime
+    ) {
       return this.token;
     }
 
     const clientId = process.env.TEST_LAYER2_CLIENT_ID;
     const clientSecret = process.env.TEST_LAYER2_SECRET;
-    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+      'base64',
+    );
 
     try {
       const tokenResponse = await axios.post(
@@ -51,7 +55,9 @@ export class BankAccountService {
         },
       );
 
-      this.tokenExpireTime = new Date(new Date().getTime() + tokenResponse.data.expires_in * 1000);
+      this.tokenExpireTime = new Date(
+        new Date().getTime() + tokenResponse.data.expires_in * 1000,
+      );
       this.token = tokenResponse.data.access_token;
       return this.token;
     } catch (error) {
@@ -60,48 +66,119 @@ export class BankAccountService {
     }
   }
 
-  async createApplication(applicationData: any): Promise<any> {
+  async createApplication(applicationData: any, req: any): Promise<any> {
     const idempotencyKey = uuidv4();
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
+    const { account_to_open, ...applicationDetails } = applicationData;
+    const { account_id, product_id, asset_type_id } = account_to_open;
+    const user = req.user;
+
     try {
-      const response = await this.axiosClient.post('/applications', applicationData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'x-l2f-request-id': idempotencyKey,
-          'x-l2f-idempotency-id': idempotencyKey,
-          'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
+      const { data: bankAccountData, error: bankAccountError } =
+        await this.supabase
+          .from('bank_accounts')
+          .insert({
+            id: uuidv4(),
+            account_name: applicationDetails.customer_details.registered_name,
+            user_id: user.sub,
+            organization_id: applicationDetails.organization_id,
+            created_at: generateTimestamp(),
+            updated_at: generateTimestamp(),
+          })
+          .select()
+          .single();
+
+      if (bankAccountError) {
+        throw new HttpException(bankAccountError.message, HttpStatus.FORBIDDEN);
+      }
+
+      // Use the bank account ID to create an application in the banking_applications table
+      const { data: createdApplicationData, error: applicationError } =
+        await this.supabase
+          .from('banking_applications')
+          .insert({
+            id: uuidv4(),
+            bank_account_id: bankAccountData.id, // Use the ID from the bank_accounts table
+            deal_id: applicationDetails.deal_id,
+            account_id: account_id,
+            product_id: product_id,
+            asset_type_id: asset_type_id,
+            customer_id: applicationDetails.customer_id,
+            application_type: applicationDetails.application_type,
+            terms_and_conditions_accepted:
+              applicationDetails.terms_and_conditions_accepted,
+            created_at: generateTimestamp(),
+            application_status: 'Pending', // Set initial status to 'Pending' or any relevant status
+          })
+          .select()
+          .single();
+
+      if (applicationError) {
+        throw new HttpException(applicationError.message, HttpStatus.FORBIDDEN);
+      }
+
+      console.log('Sending data to Layer2:', JSON.stringify(applicationData, null, 2));
+
+      const response = await this.axiosClient.post(
+        '/applications',
+        createdApplicationData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'x-l2f-request-id': idempotencyKey,
+            'x-l2f-idempotency-id': idempotencyKey,
+            'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
+          },
         },
-      });
+      );
       return response.data;
     } catch (error) {
-      console.error('Error creating application:', error);
-      throw new HttpException('Failed to create application', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Full error response:', error.response?.data || error.message);
+      throw new HttpException(
+        'Failed to create application',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async deleteIndividual(applicationId: string, individualId: string): Promise<void> {
+  async deleteIndividual(
+    applicationId: string,
+    individualId: string,
+  ): Promise<void> {
     const token = await this.getOAuthToken();
     const idempotencyKey = uuidv4();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
-      await this.axiosClient.delete(`/applications/${applicationId}/individual/${individualId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
+      await this.axiosClient.delete(
+        `/applications/${applicationId}/individual/${individualId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
         },
-      });
+      );
     } catch (error) {
-      throw new HttpException(`Failed to delete individual: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to delete individual: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -110,7 +187,10 @@ export class BankAccountService {
     const idempotencyKey = uuidv4();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
@@ -121,65 +201,95 @@ export class BankAccountService {
         },
       });
     } catch (error) {
-      throw new HttpException(`Failed to create deposit: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to create deposit: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async updateIndividual(appId: string, individualId: string, updates: { updates: Array<{ field: string, value: string }> }): Promise<any> {
+  async updateIndividual(
+    appId: string,
+    individualId: string,
+    updates: { updates: Array<{ field: string; value: string }> },
+  ): Promise<any> {
     const token = await this.getOAuthToken();
     const idempotencyKey = uuidv4();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
       const patchData = {
-        updates: updates.updates.map(update => ({
+        updates: updates.updates.map((update) => ({
           field: update.field,
           value: update.value,
         })),
       };
 
-      const response = await this.axiosClient.patch(`/applications/${appId}/individual/${individualId}`, patchData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
+      const response = await this.axiosClient.patch(
+        `/applications/${appId}/individual/${individualId}`,
+        patchData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
         },
-      });
+      );
       return response.data;
     } catch (error) {
-      throw new HttpException(`Failed to update individual: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to update individual: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async updateApplication(id: string, updates: { updates: Array<{ field: string, value: any }> }): Promise<any> {
+  async updateApplication(
+    id: string,
+    updates: { updates: Array<{ field: string; value: any }> },
+  ): Promise<any> {
     const token = await this.getOAuthToken();
     const idempotencyKey = uuidv4();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
       const patchData = {
-        updates: updates.updates.map(update => ({
+        updates: updates.updates.map((update) => ({
           field: update.field,
           value: update.value,
         })),
       };
 
-      const updatedApplication = await this.axiosClient.patch(`/applications/${id}`, patchData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
-          'Content-Type': 'application/json',
+      const updatedApplication = await this.axiosClient.patch(
+        `/applications/${id}`,
+        patchData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
       return updatedApplication.data;
     } catch (error) {
       console.error(`Failed to update application: ${error.message}`);
-      throw new HttpException(`Failed to update application: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to update application: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -188,7 +298,10 @@ export class BankAccountService {
     const idempotencyKey = uuidv4();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
@@ -200,7 +313,10 @@ export class BankAccountService {
       });
       return response.data;
     } catch (error) {
-      throw new HttpException('Failed to retrieve application', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to retrieve application',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -209,19 +325,28 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
-      const response = await this.axiosClient.get(`/applications/${id}/status`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
+      const response = await this.axiosClient.get(
+        `/applications/${id}/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
         },
-      });
+      );
       return response.data;
     } catch (error) {
-      throw new HttpException('Failed to retrieve application status', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to retrieve application status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -230,19 +355,29 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
-      const response = await this.axiosClient.post(`/applications/${id}/individual`, individualData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
+      const response = await this.axiosClient.post(
+        `/applications/${id}/individual`,
+        individualData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
         },
-      });
+      );
       return response.data;
     } catch (error) {
-      throw new HttpException(`Failed to add individual: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to add individual: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -251,43 +386,68 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
-      const response = await this.axiosClient.post(`/applications/${id}/submit`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
+      const response = await this.axiosClient.post(
+        `/applications/${id}/submit`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
         },
-      });
+      );
       return response.data;
     } catch (error) {
-      throw new HttpException(`Failed to submit application: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to submit application: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async uploadDocument(id: string, fileBuffer: Buffer, fileName: string, mimeType: string): Promise<any> {
+  async uploadDocument(
+    id: string,
+    fileBuffer: Buffer,
+    fileName: string,
+    mimeType: string,
+  ): Promise<any> {
     const token = await this.getOAuthToken();
     const idempotencyKey = uuidv4();
     const formData = new FormData();
     formData.append('file', fileBuffer, fileName);
 
     if (!token) {
-      throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
-      const response = await this.axiosClient.post(`/documents/${id}`, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          Authorization: `Bearer ${token}`,
-          'x-l2f-request-id': idempotencyKey,
+      const response = await this.axiosClient.post(
+        `/documents/${id}`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
         },
-      });
+      );
       return response.data;
     } catch (error) {
-      throw new HttpException(`Failed to upload document: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Failed to upload document: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
