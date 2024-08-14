@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors
@@ -113,7 +114,7 @@ export class Layer2Controller {
   @Post('/create_application')
   @ApiOperation({ summary: 'Create a new application' })
   @ApiResponse({ status: 200, description: 'Application created successfully' })
-  async createApplication(@Body() applicationData: any): Promise<any> {
-    return await this.applicationService.createApplication(applicationData);
+  async createApplication(@Body() applicationData: any, @Req() req): Promise<any> {
+    return await this.applicationService.createApplication(applicationData, req);
   }
 }
