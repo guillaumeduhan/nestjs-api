@@ -215,7 +215,7 @@ export class OrganizationsService {
       const { role } = currentMember;
 
       if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-        "User is not a administrator",
+        "You are not an administrator.",
         HttpStatus.FORBIDDEN
       );
 
@@ -264,7 +264,7 @@ export class OrganizationsService {
       const { role } = currentMember;
 
       if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-        "User is not a administrator",
+        "You are not an administrator.",
         HttpStatus.FORBIDDEN
       );
 

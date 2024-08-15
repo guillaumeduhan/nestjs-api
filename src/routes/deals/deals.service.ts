@@ -156,18 +156,20 @@ export class DealsService {
       const currentMember: any = await this.organizationsService.checkMembership(req, organization_id);
 
       if (!currentMember) throw new HttpException(
-        "User is not member of organization",
+        "Sorry, you are not member of organization.",
         HttpStatus.FORBIDDEN
       )
 
       const { role } = currentMember;
 
       if (role !== ROLES.ADMINISTRATOR) throw new HttpException(
-        "User is not an administrator",
+        "Sorry, you cannot update this deal because you are not an administrator of your team.",
         HttpStatus.FORBIDDEN
       );
 
       const { id, user_id, created_at, updated_at, updated_by, ...rest } = body;
+
+      console.log(paramId)
 
       const { data: updated, error: updateError }: any = await this.supabase
         .from("deals")

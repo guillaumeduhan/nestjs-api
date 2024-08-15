@@ -52,7 +52,6 @@ export class DealsController {
     status: 200,
     description: 'Deal updated successfully',
   })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
   async update(@Request() req, @Param() params) {
     return this.dealsService.update(req, params.id);
   };
