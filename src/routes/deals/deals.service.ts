@@ -169,8 +169,6 @@ export class DealsService {
 
       const { id, user_id, created_at, updated_at, updated_by, ...rest } = body;
 
-      console.log(paramId)
-
       const { data: updated, error: updateError }: any = await this.supabase
         .from("deals")
         .update({
