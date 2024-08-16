@@ -65,47 +65,29 @@ export class Layer2Controller {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<any> {
-    try {
       return await this.applicationService.uploadDocument(
         id,
         file.buffer,
         file.originalname,
         file.mimetype,
       );
-    } catch (error) {
-      if (error.response?.status === 404) {
-        throw new HttpException(
-          `Document with ID ${id} not found`,
-          HttpStatus.NOT_FOUND,
-        );
-      } else if (error.response?.status === 400) {
-        throw new HttpException(
-          'Invalid upload data provided',
-          HttpStatus.BAD_REQUEST,
-        );
-      } else {
-        throw new HttpException(
-          `Failed to upload document: ${error.message}`,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-    }
   }
-
+  
   @UseGuards(SupabaseGuard)
-  @Post('/applications/:id/add-individual')
-  @ApiOperation({ summary: 'Add an individual to an application' })
-  @ApiResponse({
+@Post('/applications/add_individual/:id')
+@ApiOperation({ summary: 'Add an individual to an application' })
+@ApiResponse({
     status: 200,
     description: 'Individual added to the application successfully',
-  })
-  async addIndividual(
+})
+async addIndividual(
     @Param('id') id: string,
     @Body() individualData: any,
-  ): Promise<any> {
+): Promise<any> {
     return await this.applicationService.addIndividual(id, individualData);
-  }
+}
 
+  
   @UseGuards(SupabaseGuard)
   @Post('/applications/submit/:id')
   @ApiOperation({ summary: 'Submit an application' })
@@ -114,20 +96,7 @@ export class Layer2Controller {
     description: 'Application submitted successfully',
   })
   async submitApplication(@Param('id') id: string): Promise<any> {
-    try {
       return await this.applicationService.submitApplication(id);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        throw new HttpException(`Application with ID ${id} not found`, HttpStatus.NOT_FOUND);
-      } else if (error.response?.status === 400) {
-        throw new HttpException('Invalid submission data provided', HttpStatus.BAD_REQUEST);
-      } else {
-        throw new HttpException(
-          `Failed to submit application: ${error.message}`,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-    }
   }
   
   @UseGuards(SupabaseGuard)

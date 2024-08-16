@@ -390,31 +390,42 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException(
-        'OAuth token not available',
-        HttpStatus.UNAUTHORIZED,
-      );
+        throw new HttpException(
+            'OAuth token not available',
+            HttpStatus.UNAUTHORIZED,
+        );
     }
 
     try {
-      const response = await this.axiosClient.post(
-        `/applications/${id}/individual`,
-        individualData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'x-l2f-request-id': idempotencyKey,
-          },
-        },
-      );
-      return response.data;
+        const response = await this.axiosClient.post(
+            `/applications/${id}/individual`,
+            individualData,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'x-l2f-request-id': idempotencyKey,
+                },
+            },
+        );
+
+        return response.data;
     } catch (error) {
-      throw new HttpException(
-        `Failed to add individual: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+        console.error('Failed to add individual:', error.response?.data || error.message);
+        if (error.response) {
+            throw new HttpException(
+                error.response.data,
+                error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        } else {
+            throw new HttpException(
+                'Failed to add individual: Unknown error occurred',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
-  }
+}
+
+
 
   async submitApplication(id: string): Promise<any> {
     const idempotencyKey = uuidv4();
