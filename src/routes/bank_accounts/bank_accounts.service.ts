@@ -82,6 +82,22 @@ export class BankAccountService {
     const user = req.user;
 
     try {
+      // First, attempt to create the application with Layer2
+      const response = await this.axiosClient.post(
+        '/applications',
+        applicationData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'x-l2f-request-id': idempotencyKey,
+            'x-l2f-idempotency-id': idempotencyKey,
+            'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
+          },
+        },
+      );
+
+      // If successful, store the data in your Supabase database
       const { data: bankAccountData, error: bankAccountError } =
         await this.supabase
           .from('bank_accounts')
@@ -100,13 +116,12 @@ export class BankAccountService {
         throw new HttpException(bankAccountError.message, HttpStatus.FORBIDDEN);
       }
 
-      // Use the bank account ID to create an application in the banking_applications table
-      const { data: createdApplicationData, error: applicationError } =
+      const { data: supabaseApplicationData, error: applicationError } =
         await this.supabase
           .from('banking_applications')
           .insert({
             id: uuidv4(),
-            bank_account_id: bankAccountData.id, // Use the ID from the bank_accounts table
+            bank_account_id: bankAccountData.id,
             deal_id: applicationDetails.deal_id,
             account_id: account_id,
             product_id: product_id,
@@ -116,7 +131,8 @@ export class BankAccountService {
             terms_and_conditions_accepted:
               applicationDetails.terms_and_conditions_accepted,
             created_at: generateTimestamp(),
-            application_status: 'Pending', // Set initial status to 'Pending' or any relevant status
+            application_status: 'Pending',
+            application_id: response.data.data.id,
           })
           .select()
           .single();
@@ -125,24 +141,21 @@ export class BankAccountService {
         throw new HttpException(applicationError.message, HttpStatus.FORBIDDEN);
       }
 
-      console.log('Sending data to Layer2:', JSON.stringify(applicationData, null, 2));
-
-      const response = await this.axiosClient.post(
-        '/applications',
-        createdApplicationData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'x-l2f-request-id': idempotencyKey,
-            'x-l2f-idempotency-id': idempotencyKey,
-            'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
-          },
-        },
-      );
       return response.data;
     } catch (error) {
-      console.error('Full error response:', error.response?.data || error.message);
+      console.error(
+        'Error creating application:',
+        error.response?.data?.errors || error.message,
+      );
+
+      // Throw the error response received from Layer2
+      if (error.response && error.response.data && error.response.data.errors) {
+        throw new HttpException(
+          error.response.data.errors,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
       throw new HttpException(
         'Failed to create application',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -341,10 +354,32 @@ export class BankAccountService {
           },
         },
       );
+
+      const applicationStatus = response.data.data.status;
+
+      const { data, error } = await this.supabase
+        .from('banking_applications')
+        .update({ application_status: applicationStatus })
+        .eq('application_id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(
+          'Failed to update application status in the database:',
+          error.message,
+        );
+      }
+
       return response.data;
     } catch (error) {
+      console.error(
+        'Failed to retrieve application status:',
+        error.response?.data?.errors || error.message,
+      );
+
       throw new HttpException(
-        'Failed to retrieve application status',
+        error.response?.data?.errors || 'Failed to retrieve application status',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -355,31 +390,42 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException(
-        'OAuth token not available',
-        HttpStatus.UNAUTHORIZED,
-      );
+        throw new HttpException(
+            'OAuth token not available',
+            HttpStatus.UNAUTHORIZED,
+        );
     }
 
     try {
-      const response = await this.axiosClient.post(
-        `/applications/${id}/individual`,
-        individualData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'x-l2f-request-id': idempotencyKey,
-          },
-        },
-      );
-      return response.data;
+        const response = await this.axiosClient.post(
+            `/applications/${id}/individual`,
+            individualData,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'x-l2f-request-id': idempotencyKey,
+                },
+            },
+        );
+
+        return response.data;
     } catch (error) {
-      throw new HttpException(
-        `Failed to add individual: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+        console.error('Failed to add individual:', error.response?.data || error.message);
+        if (error.response) {
+            throw new HttpException(
+                error.response.data,
+                error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        } else {
+            throw new HttpException(
+                'Failed to add individual: Unknown error occurred',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
-  }
+}
+
+
 
   async submitApplication(id: string): Promise<any> {
     const idempotencyKey = uuidv4();
@@ -403,17 +449,26 @@ export class BankAccountService {
           },
         },
       );
+
       return response.data;
     } catch (error) {
-      throw new HttpException(
-        `Failed to submit application: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      console.error('Error submitting application:', error.message);
+      if (error.response?.status === 404) {
+        throw new HttpException(`Application with ID ${id} not found`, HttpStatus.NOT_FOUND);
+      } else if (error.response?.status === 400) {
+        throw new HttpException('Invalid submission data provided', HttpStatus.BAD_REQUEST);
+      } else {
+        throw new HttpException(
+          `Failed to submit application: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
+
   async uploadDocument(
-    id: string,
+    applicationId: string,
     fileBuffer: Buffer,
     fileName: string,
     mimeType: string,
@@ -432,7 +487,7 @@ export class BankAccountService {
 
     try {
       const response = await this.axiosClient.post(
-        `/documents/${id}`,
+        `/documents/${applicationId}`,
         formData,
         {
           headers: {
@@ -444,10 +499,23 @@ export class BankAccountService {
       );
       return response.data;
     } catch (error) {
-      throw new HttpException(
-        `Failed to upload document: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      console.error('Error uploading document:', error.message);
+      if (error.response?.status === 404) {
+        throw new HttpException(
+          `Application with ID ${applicationId} not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      } else if (error.response?.status === 400) {
+        throw new HttpException(
+          'Invalid upload data provided',
+          HttpStatus.BAD_REQUEST,
+        );
+      } else {
+        throw new HttpException(
+          `Failed to upload document: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 }
