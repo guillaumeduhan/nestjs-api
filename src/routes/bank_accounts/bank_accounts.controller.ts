@@ -107,16 +107,29 @@ export class Layer2Controller {
   }
 
   @UseGuards(SupabaseGuard)
-  @Post('/applications/:id/submit')
+  @Post('/applications/submit/:id')
   @ApiOperation({ summary: 'Submit an application' })
   @ApiResponse({
     status: 200,
     description: 'Application submitted successfully',
   })
   async submitApplication(@Param('id') id: string): Promise<any> {
-    return await this.applicationService.submitApplication(id);
+    try {
+      return await this.applicationService.submitApplication(id);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new HttpException(`Application with ID ${id} not found`, HttpStatus.NOT_FOUND);
+      } else if (error.response?.status === 400) {
+        throw new HttpException('Invalid submission data provided', HttpStatus.BAD_REQUEST);
+      } else {
+        throw new HttpException(
+          `Failed to submit application: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
   }
-
+  
   @UseGuards(SupabaseGuard)
   @Patch('/update-applications/:id')
   @ApiOperation({ summary: 'Update an application' })

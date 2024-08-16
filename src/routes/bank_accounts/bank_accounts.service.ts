@@ -438,14 +438,23 @@ export class BankAccountService {
           },
         },
       );
+
       return response.data;
     } catch (error) {
-      throw new HttpException(
-        `Failed to submit application: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      console.error('Error submitting application:', error.message);
+      if (error.response?.status === 404) {
+        throw new HttpException(`Application with ID ${id} not found`, HttpStatus.NOT_FOUND);
+      } else if (error.response?.status === 400) {
+        throw new HttpException('Invalid submission data provided', HttpStatus.BAD_REQUEST);
+      } else {
+        throw new HttpException(
+          `Failed to submit application: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
+
 
   async uploadDocument(
     applicationId: string,
