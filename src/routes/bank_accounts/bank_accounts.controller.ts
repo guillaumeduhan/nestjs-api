@@ -33,12 +33,12 @@ export class Layer2Controller {
   }
 
   @UseGuards(SupabaseGuard)
-  @Get('/applications/:id/check-status')
+  @Get('/applications/check-status/:id')
   @ApiOperation({ summary: 'Check the status of an application' })
   @ApiResponse({ status: 200, description: 'Application Status retrieved successfully' })
   async getStatus(@Param('id') id: string): Promise<any> {
     return await this.applicationService.getApplicationStatus(id);
-  }
+  }  
 
   @UseGuards(SupabaseGuard)
   @Get('/applications/:id/details')

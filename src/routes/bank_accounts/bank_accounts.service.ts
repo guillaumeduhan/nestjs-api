@@ -343,14 +343,32 @@ export class BankAccountService {
           },
         },
       );
+
+      const applicationStatus = response.data.data.status;
+      
+      const { data, error } = await this.supabase
+        .from('banking_applications')
+        .update({ application_status: applicationStatus})
+        .eq('application_id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to update application status in the database:', error.message);
+      }
+
       return response.data;
     } catch (error) {
+      console.error('Failed to retrieve application status:', error.response?.data?.errors || error.message);
+      
       throw new HttpException(
-        'Failed to retrieve application status',
+        error.response?.data?.errors || 'Failed to retrieve application status',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
+
+
 
   async addIndividual(id: string, individualData: any): Promise<any> {
     const idempotencyKey = uuidv4();
