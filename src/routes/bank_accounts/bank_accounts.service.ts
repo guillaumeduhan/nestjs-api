@@ -71,10 +71,7 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-      throw new HttpException(
-        'OAuth token not available',
-        HttpStatus.UNAUTHORIZED,
-      );
+        throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
     }
 
     const { account_to_open, ...applicationDetails } = applicationData;
@@ -82,73 +79,78 @@ export class BankAccountService {
     const user = req.user;
 
     try {
-      const { data: bankAccountData, error: bankAccountError } =
-        await this.supabase
-          .from('bank_accounts')
-          .insert({
-            id: uuidv4(),
-            account_name: applicationDetails.customer_details.registered_name,
-            user_id: user.sub,
-            organization_id: applicationDetails.organization_id,
-            created_at: generateTimestamp(),
-            updated_at: generateTimestamp(),
-          })
-          .select()
-          .single();
+        // First, attempt to create the application with Layer2
+        const response = await this.axiosClient.post(
+            '/applications',
+            applicationData,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'x-l2f-request-id': idempotencyKey,
+                    'x-l2f-idempotency-id': idempotencyKey,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
+                },
+            },
+        );
 
-      if (bankAccountError) {
-        throw new HttpException(bankAccountError.message, HttpStatus.FORBIDDEN);
-      }
+        // If successful, store the data in your Supabase database
+        const { data: bankAccountData, error: bankAccountError } =
+            await this.supabase
+                .from('bank_accounts')
+                .insert({
+                    id: uuidv4(),
+                    account_name: applicationDetails.customer_details.registered_name,
+                    user_id: user.sub,
+                    organization_id: applicationDetails.organization_id,
+                    created_at: generateTimestamp(),
+                    updated_at: generateTimestamp(),
+                })
+                .select()
+                .single();
 
-      // Use the bank account ID to create an application in the banking_applications table
-      const { data: createdApplicationData, error: applicationError } =
-        await this.supabase
-          .from('banking_applications')
-          .insert({
-            id: uuidv4(),
-            bank_account_id: bankAccountData.id, // Use the ID from the bank_accounts table
-            deal_id: applicationDetails.deal_id,
-            account_id: account_id,
-            product_id: product_id,
-            asset_type_id: asset_type_id,
-            customer_id: applicationDetails.customer_id,
-            application_type: applicationDetails.application_type,
-            terms_and_conditions_accepted:
-              applicationDetails.terms_and_conditions_accepted,
-            created_at: generateTimestamp(),
-            application_status: 'Pending', // Set initial status to 'Pending' or any relevant status
-          })
-          .select()
-          .single();
+        if (bankAccountError) {
+            throw new HttpException(bankAccountError.message, HttpStatus.FORBIDDEN);
+        }
 
-      if (applicationError) {
-        throw new HttpException(applicationError.message, HttpStatus.FORBIDDEN);
-      }
+        const { data: supabaseApplicationData, error: applicationError } =
+            await this.supabase
+                .from('banking_applications')
+                .insert({
+                    id: uuidv4(),
+                    bank_account_id: bankAccountData.id,
+                    deal_id: applicationDetails.deal_id,
+                    account_id: account_id,
+                    product_id: product_id,
+                    asset_type_id: asset_type_id,
+                    customer_id: applicationDetails.customer_id,
+                    application_type: applicationDetails.application_type,
+                    terms_and_conditions_accepted:
+                        applicationDetails.terms_and_conditions_accepted,
+                    created_at: generateTimestamp(),
+                    application_status: 'Pending',
+                    application_id: response.data.data.id,
+                })
+                .select()
+                .single();
 
-      console.log('Sending data to Layer2:', JSON.stringify(applicationData, null, 2));
+        if (applicationError) {
+            throw new HttpException(applicationError.message, HttpStatus.FORBIDDEN);
+        }
 
-      const response = await this.axiosClient.post(
-        '/applications',
-        createdApplicationData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'x-l2f-request-id': idempotencyKey,
-            'x-l2f-idempotency-id': idempotencyKey,
-            'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
-          },
-        },
-      );
-      return response.data;
+        return response.data;
     } catch (error) {
-      console.error('Full error response:', error.response?.data || error.message);
-      throw new HttpException(
-        'Failed to create application',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+        console.error('Error creating application:', error.response?.data?.errors || error.message);
+
+        // Throw the error response received from Layer2
+        if (error.response && error.response.data && error.response.data.errors) {
+            throw new HttpException(error.response.data.errors, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        throw new HttpException('Failed to create application', HttpStatus.INTERNAL_SERVER_ERROR);
     }
-  }
+}
+
 
   async deleteIndividual(
     applicationId: string,
