@@ -71,7 +71,10 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-        throw new HttpException('OAuth token not available', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const { account_to_open, ...applicationDetails } = applicationData;
@@ -79,78 +82,86 @@ export class BankAccountService {
     const user = req.user;
 
     try {
-        // First, attempt to create the application with Layer2
-        const response = await this.axiosClient.post(
-            '/applications',
-            applicationData,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'x-l2f-request-id': idempotencyKey,
-                    'x-l2f-idempotency-id': idempotencyKey,
-                    'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
-                },
-            },
-        );
+      // First, attempt to create the application with Layer2
+      const response = await this.axiosClient.post(
+        '/applications',
+        applicationData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'x-l2f-request-id': idempotencyKey,
+            'x-l2f-idempotency-id': idempotencyKey,
+            'Cache-Control': 'no-cache, no-store, must-revalidate max-age=0',
+          },
+        },
+      );
 
-        // If successful, store the data in your Supabase database
-        const { data: bankAccountData, error: bankAccountError } =
-            await this.supabase
-                .from('bank_accounts')
-                .insert({
-                    id: uuidv4(),
-                    account_name: applicationDetails.customer_details.registered_name,
-                    user_id: user.sub,
-                    organization_id: applicationDetails.organization_id,
-                    created_at: generateTimestamp(),
-                    updated_at: generateTimestamp(),
-                })
-                .select()
-                .single();
+      // If successful, store the data in your Supabase database
+      const { data: bankAccountData, error: bankAccountError } =
+        await this.supabase
+          .from('bank_accounts')
+          .insert({
+            id: uuidv4(),
+            account_name: applicationDetails.customer_details.registered_name,
+            user_id: user.sub,
+            organization_id: applicationDetails.organization_id,
+            created_at: generateTimestamp(),
+            updated_at: generateTimestamp(),
+          })
+          .select()
+          .single();
 
-        if (bankAccountError) {
-            throw new HttpException(bankAccountError.message, HttpStatus.FORBIDDEN);
-        }
+      if (bankAccountError) {
+        throw new HttpException(bankAccountError.message, HttpStatus.FORBIDDEN);
+      }
 
-        const { data: supabaseApplicationData, error: applicationError } =
-            await this.supabase
-                .from('banking_applications')
-                .insert({
-                    id: uuidv4(),
-                    bank_account_id: bankAccountData.id,
-                    deal_id: applicationDetails.deal_id,
-                    account_id: account_id,
-                    product_id: product_id,
-                    asset_type_id: asset_type_id,
-                    customer_id: applicationDetails.customer_id,
-                    application_type: applicationDetails.application_type,
-                    terms_and_conditions_accepted:
-                        applicationDetails.terms_and_conditions_accepted,
-                    created_at: generateTimestamp(),
-                    application_status: 'Pending',
-                    application_id: response.data.data.id,
-                })
-                .select()
-                .single();
+      const { data: supabaseApplicationData, error: applicationError } =
+        await this.supabase
+          .from('banking_applications')
+          .insert({
+            id: uuidv4(),
+            bank_account_id: bankAccountData.id,
+            deal_id: applicationDetails.deal_id,
+            account_id: account_id,
+            product_id: product_id,
+            asset_type_id: asset_type_id,
+            customer_id: applicationDetails.customer_id,
+            application_type: applicationDetails.application_type,
+            terms_and_conditions_accepted:
+              applicationDetails.terms_and_conditions_accepted,
+            created_at: generateTimestamp(),
+            application_status: 'Pending',
+            application_id: response.data.data.id,
+          })
+          .select()
+          .single();
 
-        if (applicationError) {
-            throw new HttpException(applicationError.message, HttpStatus.FORBIDDEN);
-        }
+      if (applicationError) {
+        throw new HttpException(applicationError.message, HttpStatus.FORBIDDEN);
+      }
 
-        return response.data;
+      return response.data;
     } catch (error) {
-        console.error('Error creating application:', error.response?.data?.errors || error.message);
+      console.error(
+        'Error creating application:',
+        error.response?.data?.errors || error.message,
+      );
 
-        // Throw the error response received from Layer2
-        if (error.response && error.response.data && error.response.data.errors) {
-            throw new HttpException(error.response.data.errors, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+      // Throw the error response received from Layer2
+      if (error.response && error.response.data && error.response.data.errors) {
+        throw new HttpException(
+          error.response.data.errors,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
 
-        throw new HttpException('Failed to create application', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to create application',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-}
-
+  }
 
   async deleteIndividual(
     applicationId: string,
@@ -345,30 +356,34 @@ export class BankAccountService {
       );
 
       const applicationStatus = response.data.data.status;
-      
+
       const { data, error } = await this.supabase
         .from('banking_applications')
-        .update({ application_status: applicationStatus})
+        .update({ application_status: applicationStatus })
         .eq('application_id', id)
         .select()
         .single();
 
       if (error) {
-        console.error('Failed to update application status in the database:', error.message);
+        console.error(
+          'Failed to update application status in the database:',
+          error.message,
+        );
       }
 
       return response.data;
     } catch (error) {
-      console.error('Failed to retrieve application status:', error.response?.data?.errors || error.message);
-      
+      console.error(
+        'Failed to retrieve application status:',
+        error.response?.data?.errors || error.message,
+      );
+
       throw new HttpException(
         error.response?.data?.errors || 'Failed to retrieve application status',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
-
-
 
   async addIndividual(id: string, individualData: any): Promise<any> {
     const idempotencyKey = uuidv4();
@@ -433,7 +448,7 @@ export class BankAccountService {
   }
 
   async uploadDocument(
-    id: string,
+    applicationId: string,
     fileBuffer: Buffer,
     fileName: string,
     mimeType: string,
@@ -452,7 +467,7 @@ export class BankAccountService {
 
     try {
       const response = await this.axiosClient.post(
-        `/documents/${id}`,
+        `/documents/${applicationId}`,
         formData,
         {
           headers: {
@@ -464,10 +479,23 @@ export class BankAccountService {
       );
       return response.data;
     } catch (error) {
-      throw new HttpException(
-        `Failed to upload document: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      console.error('Error uploading document:', error.message);
+      if (error.response?.status === 404) {
+        throw new HttpException(
+          `Application with ID ${applicationId} not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      } else if (error.response?.status === 400) {
+        throw new HttpException(
+          'Invalid upload data provided',
+          HttpStatus.BAD_REQUEST,
+        );
+      } else {
+        throw new HttpException(
+          `Failed to upload document: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 }
