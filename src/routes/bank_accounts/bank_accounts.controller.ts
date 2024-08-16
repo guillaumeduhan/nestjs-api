@@ -57,7 +57,7 @@ export class Layer2Controller {
   }
 
   @UseGuards(SupabaseGuard)
-  @Post('/upload_documents/:id')
+  @Post('/applications/upload_documents/:id')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload a document to an application' })
   @ApiResponse({ status: 200, description: 'Document uploaded successfully' })
