@@ -63,12 +63,12 @@ export class DealsService {
         return [];
       }
 
-      const dealsIds = organizations.map(org => org.id);
+      const organizationsIds = organizations.map(org => org.id);
 
       const { data: deals, error } = await this.supabase
         .from('deals')
         .select('*')
-        .in('organization_id', dealsIds);
+        .in('organization_id', organizationsIds);
 
       if (error) throw new HttpException(
         error.message,

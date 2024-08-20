@@ -4,8 +4,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -13,6 +11,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Request
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -21,7 +20,30 @@ import { BankAccountService, Deposit } from './bank_accounts.service';
 @ApiTags('Bank Accounts Layer 2')
 @Controller('bank_accounts')
 export class Layer2Controller {
-  constructor(private readonly applicationService: BankAccountService) {}
+  constructor(private readonly applicationService: BankAccountService) { }
+
+  @UseGuards(SupabaseGuard)
+  @Get()
+  @ApiOperation({ summary: 'Get all bank accounts' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bank accounts get successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async get(@Request() req) {
+    return this.applicationService.getAll(req);
+  };
+
+  @UseGuards(SupabaseGuard)
+  @Post()
+  @ApiOperation({ summary: 'Create a new Bank Account' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bank Account created successfully',
+  })
+  async create(@Request() req) {
+    return this.applicationService.create(req);
+  };
 
   @UseGuards(SupabaseGuard)
   @Delete('/applications/:id/individual/:individualId')
@@ -65,29 +87,29 @@ export class Layer2Controller {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<any> {
-      return await this.applicationService.uploadDocument(
-        id,
-        file.buffer,
-        file.originalname,
-        file.mimetype,
-      );
+    return await this.applicationService.uploadDocument(
+      id,
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+    );
   }
-  
+
   @UseGuards(SupabaseGuard)
-@Post('/applications/add_individual/:id')
-@ApiOperation({ summary: 'Add an individual to an application' })
-@ApiResponse({
+  @Post('/applications/add_individual/:id')
+  @ApiOperation({ summary: 'Add an individual to an application' })
+  @ApiResponse({
     status: 200,
     description: 'Individual added to the application successfully',
-})
-async addIndividual(
+  })
+  async addIndividual(
     @Param('id') id: string,
     @Body() individualData: any,
-): Promise<any> {
+  ): Promise<any> {
     return await this.applicationService.addIndividual(id, individualData);
-}
+  }
 
-  
+
   @UseGuards(SupabaseGuard)
   @Post('/applications/submit/:id')
   @ApiOperation({ summary: 'Submit an application' })
@@ -96,9 +118,9 @@ async addIndividual(
     description: 'Application submitted successfully',
   })
   async submitApplication(@Param('id') id: string): Promise<any> {
-      return await this.applicationService.submitApplication(id);
+    return await this.applicationService.submitApplication(id);
   }
-  
+
   @UseGuards(SupabaseGuard)
   @Patch('/update-applications/:id')
   @ApiOperation({ summary: 'Update an application' })
