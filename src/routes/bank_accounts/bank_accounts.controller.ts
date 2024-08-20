@@ -8,10 +8,10 @@ import {
   Patch,
   Post,
   Req,
+  Request,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
-  Request
+  UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -44,6 +44,32 @@ export class Layer2Controller {
   async create(@Request() req) {
     return this.applicationService.create(req);
   };
+
+  @UseGuards(SupabaseGuard)
+  @Get(':id')
+  @ApiOperation({ summary: 'Get Bank account by id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bank account get successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async getById(@Request() req, @Param() params) {
+    return this.applicationService.getById(req, params.id);
+  };
+
+  @UseGuards(SupabaseGuard)
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update Bank Account by id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bank Account updated successfully',
+  })
+  async update(@Request() req, @Param() params) {
+    return this.applicationService.update(req, params.id);
+  };
+
+  // applications
+
 
   @UseGuards(SupabaseGuard)
   @Delete('/applications/:id/individual/:individualId')
