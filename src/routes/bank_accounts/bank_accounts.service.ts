@@ -5,6 +5,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import axios, { AxiosInstance } from 'axios';
 import * as FormData from 'form-data';
 import { v4 as uuidv4 } from 'uuid';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 export interface Deposit {
   deposit_type: string;
@@ -21,6 +22,7 @@ export class BankAccountService {
 
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
+    private readonly organizationsService: OrganizationsService
   ) {
     this.axiosClient = axios.create({
       baseURL: process.env.LAYER2_TEST_BASE_URL,
@@ -63,6 +65,81 @@ export class BankAccountService {
     } catch (error) {
       console.error('Failed to retrieve token:', error);
       return null;
+    }
+  }
+
+  async create(req: any) {
+    try {
+      const { body, user } = req;
+      if (!body) throw new HttpException(
+        "Missing body",
+        HttpStatus.FORBIDDEN
+      );
+      const { account_name, organization_id } = body;
+      if (!account_name) throw new HttpException(
+        'Missing account name',
+        HttpStatus.FORBIDDEN
+      );
+      if (!organization_id) throw new HttpException(
+        'Missing organization',
+        HttpStatus.FORBIDDEN
+      );
+      const { data, error }: any = await this.supabase
+        .from("bank_accounts")
+        .insert({
+          ...body,
+          user_id: user.sub,
+        })
+        .select()
+        .single()
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+      return data;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to create bank account',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  };
+
+  async getAll(req: any) {
+    try {
+      const organizations = await this.organizationsService.getAll(req);
+
+      if (!organizations.length) {
+        return [];
+      }
+
+      const organizationsId = organizations.map(org => org.id);
+
+      const { data: bank_accounts, error } = await this.supabase
+        .from('bank_accounts')
+        .select('*, organizations(*), banking_applications(*)')
+        .in('organization_id', organizationsId);
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return bank_accounts
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to get all deals',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
     }
   }
 
@@ -390,42 +467,40 @@ export class BankAccountService {
     const token = await this.getOAuthToken();
 
     if (!token) {
-        throw new HttpException(
-            'OAuth token not available',
-            HttpStatus.UNAUTHORIZED,
-        );
+      throw new HttpException(
+        'OAuth token not available',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     try {
-        const response = await this.axiosClient.post(
-            `/applications/${id}/individual`,
-            individualData,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'x-l2f-request-id': idempotencyKey,
-                },
-            },
-        );
+      const response = await this.axiosClient.post(
+        `/applications/${id}/individual`,
+        individualData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-l2f-request-id': idempotencyKey,
+          },
+        },
+      );
 
-        return response.data;
+      return response.data;
     } catch (error) {
-        console.error('Failed to add individual:', error.response?.data || error.message);
-        if (error.response) {
-            throw new HttpException(
-                error.response.data,
-                error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        } else {
-            throw new HttpException(
-                'Failed to add individual: Unknown error occurred',
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
+      console.error('Failed to add individual:', error.response?.data || error.message);
+      if (error.response) {
+        throw new HttpException(
+          error.response.data,
+          error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      } else {
+        throw new HttpException(
+          'Failed to add individual: Unknown error occurred',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
-}
-
-
+  }
 
   async submitApplication(id: string): Promise<any> {
     const idempotencyKey = uuidv4();
@@ -465,7 +540,6 @@ export class BankAccountService {
       }
     }
   }
-
 
   async uploadDocument(
     applicationId: string,
