@@ -143,6 +143,75 @@ export class BankAccountService {
     }
   }
 
+  async getById(req: any, paramId: string) {
+    try {
+      const { user } = req;
+      const { data: bank_account, error }: any = await this.supabase
+        .from("bank_accounts")
+        .select("*, organizations(*), banking_applications(*)")
+        .eq("id", paramId)
+        .single()
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return bank_account;
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: `Failed to get bank account ${paramId}`,
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+
+  async update(req: any, paramId: string) {
+    try {
+      const { user, body } = req;
+
+      if (!body) throw new HttpException(
+        "Missing body",
+        HttpStatus.FORBIDDEN
+      );
+
+      const { id, user_id, created_at, updated_at, updated_by, ...rest } = body;
+
+      const { data: updated, error }: any = await this.supabase
+        .from("bank_accounts")
+        .update({
+          ...rest,
+          updated_at: generateTimestamp(),
+          updated_by: user.sub
+        })
+        .eq('id', paramId)
+        .select()
+        .single()
+
+      if (error) throw new HttpException(
+        error.message,
+        HttpStatus.FORBIDDEN
+      );
+
+      return updated
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: `Failed to update bank account ${paramId}`,
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+  }
+
+  //
+
   async createApplication(applicationData: any, req: any): Promise<any> {
     const idempotencyKey = uuidv4();
     const token = await this.getOAuthToken();
