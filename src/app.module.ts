@@ -23,6 +23,7 @@ import { OrganizationsController } from './routes/organizations/organizations.co
 import { OrganizationsModule } from './routes/organizations/organizations.module';
 import { OrganizationsService } from './routes/organizations/organizations.service';
 import { SignersModule } from './routes/signers/signers.module';
+import { DealsRolesModule } from './routes/deals_roles/deals_roles.module';
 
 @Module({
   imports: [
@@ -44,7 +45,8 @@ import { SignersModule } from './routes/signers/signers.module';
     DocumentsModule,
     CryptoWalletsModule,
     FilesModule,
-    SignersModule
+    SignersModule,
+    DealsRolesModule
   ],
   controllers: [
     AppController,
