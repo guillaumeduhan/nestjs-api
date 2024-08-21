@@ -93,7 +93,7 @@ export class DealsService {
       const { user } = req;
       const { data: deal, error }: any = await this.supabase
         .from("deals")
-        .select("*, organizations(*, entities(*), organizations_members(*)), entities(*, organizations(*), bank_accounts(*)), identities(*), deals_roles(*)")
+        .select("*, organizations(*, entities(*), organizations_members(*)), entities(*, organizations(*)), identities(*), deals_roles(*)")
         .eq("id", paramId)
         .single()
 
