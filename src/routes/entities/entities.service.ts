@@ -73,7 +73,7 @@ export class EntitiesService {
 
       const { data: entities, error } = await this.supabase
         .from('entities')
-        .select('*, organizations(*, organizations_members(*)), bank_accounts(*)')
+        .select('*, organizations(*, organizations_members(*))')
         .in('organization_id', organizationIds);
 
       if (error) throw new HttpException(
