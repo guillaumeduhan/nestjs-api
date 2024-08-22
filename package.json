@@ -1,8 +1,9 @@
 {
-  "name": "api-v4",
+  "name": "tax-api-v4",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "guillaumeduhan",
+  "company": "Allocations",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

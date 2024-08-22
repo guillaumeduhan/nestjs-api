@@ -11,10 +11,10 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
 
     const config = new DocumentBuilder()
-      .setTitle('Client-Api-V4')
-      .setDescription('The Client-Api-V4 API description')
+      .setTitle('Tax-Api-V4')
+      .setDescription('The Tax-Api-V4 API description')
       .setVersion('1.0')
-      .addTag('client-api-v4')
+      .addTag('tax-api-v4')
       .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
         'access-token',)
       .build();

@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 export class AppService {
   ping(req: any): any {
     return {
-      hello: 'world',
+      status: 'Tax API v4 running well',
       date: new Date(),
       url: req.url,
       headers: Object.assign({}, req.headers),

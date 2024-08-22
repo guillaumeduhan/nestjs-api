@@ -1,6 +1,6 @@
-# Client-API-v4
+# Tax-API-v4
 
-Repository containing the Client Allocation API for client requests. Built with NestJS, Passport, & Supabase.
+Repository containing the Tax Allocation API only for internal requests. Built with NestJS, Passport, & Supabase.
 
 
 ## Getting started
