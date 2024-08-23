@@ -1,4 +1,4 @@
-// to calculate
+// to calculate investments_taxes
 export const INVESTMENTS_TAXES_REQUIRED_FIELDS = [
   "calculator_version",
   "created_at",
@@ -18,7 +18,6 @@ export const INVESTMENTS_TAXES_REQUIRED_FIELDS = [
 ];
 
 export const INVESTMENTS_TAXES_INVESTOR_REQUIRED_FIELDS = [
-  "investor_beginning_capital_account_amount",
   "investor_beginning_capital_percentage",
   "investor_beginning_loss_percentage",
   "investor_beginning_profit_percentage",
@@ -49,3 +48,7 @@ export const INVESTMENTS_TAXES_INVESTOR_REQUIRED_FIELDS = [
   "investor_street_address",
   "investor_tax_id"
 ];
+
+export const ARCHIVED = [
+  "investor_beginning_capital_account_amount",
+]
