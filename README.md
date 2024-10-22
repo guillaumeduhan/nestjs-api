@@ -2,7 +2,6 @@
 
 Repository containing the Tax Allocation API only for internal requests. Built with NestJS, Passport, & Supabase.
 
-
 ## Getting started
 For now, the API does not have a Docker image and runs only on the terminal.
 Install + dev environment, please use ``make dev`` to use daemon (or watcher):
@@ -17,6 +16,13 @@ JWT_SECRET=
 SUPABASE_URL=
 SUPABASE_KEY=
 SUPABASE_JWT_SECRET=
+GOSYSTEM_CLIENT_ID=
+GOSYSTEM_CLIENT_SECRET=
+GOSYSTEM_ACCOUNT=
+GOSYSTEM_API_TOKEN=
+GOSYSTEM_LOGIN_ID=
+GOSYSTEM_STATE=
+GOSYSTEM_CENTER=
 ```
 
 ### Prefix
