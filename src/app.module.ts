@@ -7,7 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SupabaseModule } from './auth/supabase/supabase.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { supabaseProvider } from './providers/supabase.providers';
-import { EntitiesTaxesModule } from './routes/entities_taxes/entities_taxes.module';
+import { EntityTaxesModule } from './routes/entities_taxes/entities_taxes.module';
 import { InvestmentsTaxesModule } from './routes/investments_taxes/investments_taxes.module';
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { InvestmentsTaxesModule } from './routes/investments_taxes/investments_t
     }),
     AuthModule,
     SupabaseModule,
-    EntitiesTaxesModule,
+    EntityTaxesModule,
     InvestmentsTaxesModule
   ],
   controllers: [
