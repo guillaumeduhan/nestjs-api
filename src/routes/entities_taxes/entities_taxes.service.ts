@@ -23,7 +23,6 @@ export class EntityTaxesService {
         .from('entities_taxes')
         .insert({
           ...entitytax,
-          owner_id: user.sub,
           created_at: generateTimestamp(),
         })
         .select('*')
@@ -78,14 +77,6 @@ export class EntityTaxesService {
       if (!entitytax) {
         throw new HttpException(
           'Missing body',
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      const currentData = await this.getById(paramId, req);
-      if (currentData.owner_id !== user.sub) {
-        throw new HttpException(
-          "Unauthorized: user doesn't have permission to update",
           HttpStatus.FORBIDDEN,
         );
       }

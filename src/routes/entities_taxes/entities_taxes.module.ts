@@ -1,6 +1,6 @@
 import { SupabaseModule } from '@/auth/supabase/supabase.module';
-import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common';
 import { EntityTaxesController } from './entities_taxes.controller';
 import { EntityTaxesService } from './entities_taxes.service';
 
@@ -8,6 +8,5 @@ import { EntityTaxesService } from './entities_taxes.service';
   controllers: [EntityTaxesController],
   providers: [EntityTaxesService],
   imports: [SupabaseModule, ConfigModule]
-
 })
 export class EntityTaxesModule { }
