@@ -7,13 +7,19 @@ import { AuthModule } from './auth/auth.module';
 import { SupabaseModule } from './auth/supabase/supabase.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { supabaseProvider } from './providers/supabase.providers';
+import { GosystemModule } from './routes/gosystem/gosystem.module';
+import { EntitiesTaxesModule } from './routes/entities_taxes/entities_taxes.module';
+import { InvestmentsTaxesModule } from './routes/investments_taxes/investments_taxes.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // makes ConfigModule globally available
     }),
     AuthModule,
-    SupabaseModule
+    SupabaseModule,
+    GosystemModule,
+    EntitiesTaxesModule,
+    InvestmentsTaxesModule
   ],
   controllers: [
     AppController,
