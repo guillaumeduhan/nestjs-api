@@ -2,10 +2,12 @@ import { generateTimestamp } from '@/common/helpers/utils';
 import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { SlackService } from 'nestjs-slack';
 
 @Injectable()
 export class InvestmentsTaxesService {
   constructor(
+    private slackService: SlackService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) { }
 
@@ -34,8 +36,15 @@ export class InvestmentsTaxesService {
           HttpStatus.FORBIDDEN,
         );
       }
+      const { id } = data;
+      this.slackService.sendText(`✅ [INVESTMENT] Successfully created 👉 https://v4.allocations.com/investments_taxes/${id}`, {
+        channel: "taxes-logs-v4"
+      });
       return data;
     } catch (error) {
+      this.slackService.sendText(`🔴 [INVESTMENT] Failed to create 👉 ${error.message}`, {
+        channel: "taxes-logs-v4"
+      });
       throw new HttpException(
         {
           status: error.status,
@@ -92,8 +101,15 @@ export class InvestmentsTaxesService {
         );
       }
 
+      const { id } = data;
+      this.slackService.sendText(`🟢 [INVESTMENT] Updated 👉 https://v4.allocations.com/investments_taxes/${id}`, {
+        channel: "taxes-logs-v4"
+      });
       return data;
     } catch (error) {
+      this.slackService.sendText(`🔴 [INVESTMENT] Failed to update 👉 ${error.message} 👉 https://v4.allocations.com/investments_taxes/${paramId}`, {
+        channel: "taxes-logs-v4"
+      });
       throw new HttpException({
         status: error.status,
         error: 'Failed to update investment taxes',
