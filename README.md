@@ -15,14 +15,6 @@ PORT=4200
 JWT_SECRET=
 SUPABASE_URL=
 SUPABASE_KEY=
-SUPABASE_JWT_SECRET=
-GOSYSTEM_CLIENT_ID=
-GOSYSTEM_CLIENT_SECRET=
-GOSYSTEM_ACCOUNT=
-GOSYSTEM_API_TOKEN=
-GOSYSTEM_LOGIN_ID=
-GOSYSTEM_STATE=
-GOSYSTEM_CENTER=
 ```
 
 ### Prefix
@@ -116,3 +108,38 @@ export class CatsService {
   }
 }
 ```
+
+## Taxes
+
+### Routes (temporary)
+
+| Pathname                                               | Description                                                                     |
+|--------------------------------------------------------|---------------------------------------------------------------------------------|
+| `/taxes/at-regen/{entitiesId}/2022`                    | Regenerates tax data from Airtable for a given entity and tax year (2022).      |
+| `/taxes/batches/{batchNumber}/{taxYear}/import`        | Imports taxes for entities based on a batch number and tax year.                |
+| `/taxes/calculator/current-version`                    | Retrieves the current version of the Taxes Calculator.                          |
+| `/taxes/create-records/{entityId}/{taxYear}`           | Creates new entity and investment tax records for a given tax year.             |
+| `/taxes/entities/{entityId}/create-client`             | Creates a client record for an entity in the tax system.                        |
+| `/taxes/entities/{entityId}/ledger`                    | Creates a new ledger entry for an entity.                                       |
+| `/taxes/entities/{entityId}/{taxYear}/approve`         | Approves tax filings for an entity for a specific year.                         |
+| `/taxes/entities/{entityId}/{taxYear}/import`          | Imports entities for tax return 1065 or a specific tax year.                    |
+| `/taxes/entities/{entityId}/{taxYear}/print`           | Prints the 1065 tax form or tax records for a specific entity and tax year.     |
+| `/taxes/entities/{taxYear}/incomplete-count`           | Returns the count of incomplete tax filings for a specific year.                |
+| `/taxes/entities/create-base-returns`                  | Creates base returns for eligible entities in the tax system.                   |
+| `/taxes/entities/create-clients`                       | Creates multiple client records for eligible entities.                          |
+| `/taxes/entities/{entitiesTaxesId}/1065-upload`        | Uploads 1065 files for a given entity tax ID.                                   |
+| `/taxes/entities/{entitiesTaxesId}/export`             | Exports data from existing Tax System into Supabase.                            |
+| `/taxes/entities/{entitiesTaxesId}/import`             | Imports entities for tax return 1065.                                           |
+| `/taxes/entities/{entitiesTaxesId}/k1-bulk-upload`     | Uploads K-1 files in bulk for a given entity tax ID.                            |
+| `/taxes/entities/{entitiesTaxesId}/print`              | Prints the 1065 tax form for a given entity tax ID.                             |
+| `/taxes/forms/8879/{entityId}/{taxYear}/sign`          | Fills and signs Form 8879 for a given entity and tax year.                      |
+| `/taxes/get-elf-status/{taxYear}`                      | Retrieves the e-filing status for entities in a specific year.                  |
+| `/taxes/import-tax-records-with-status/{status}/{taxYear}`| Imports tax records for entities with a specific status and year.              |
+| `/taxes/locked-status/{entityId}/{taxYear}`            | Checks if the tax records for an entity are locked for a given year.            |
+| `/taxes/notify-lps`                                    | Sends notifications to limited partners (LPs) with a link to download the K-1s. |
+| `/taxes/organizations/{organizationId}/{taxYear}/import`| Imports taxes for all entities in an organization for a given tax year.         |
+| `/taxes/provider-partners/{entityId}/{taxYear}`        | Retrieves the provider partners for an entity for a specific tax year.          |
+| `/taxes/pull-ending-capital/{entityId}/{taxYear}`      | Pulls ending capital amounts for an entity for a specific tax year.             |
+| `/taxes/rollback/{entityId}/{taxYear}/{rollbackVersion}`| Rolls back entity taxes to a specified version.                                 |
+| `/taxes/sync-locked-status/{taxYear}`                  | Synchronizes the locked status of tax records for a given year.                 |
+| `/taxes/update-tax-records/{taxYear}`                  | Updates tax records for a specific tax year.                                    |
