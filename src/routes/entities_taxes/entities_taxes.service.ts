@@ -12,8 +12,8 @@ export class EntityTaxesService {
   ) { }
 
   async create(req: any) {
-    const { body: entitytax, user } = req;
-    if (!entitytax) {
+    const { body: entityTax, user } = req;
+    if (!entityTax) {
       throw new HttpException(
         "Missing body",
         HttpStatus.FORBIDDEN,
@@ -24,7 +24,7 @@ export class EntityTaxesService {
       const { data, error } = await this.supabase
         .from('entities_taxes')
         .insert({
-          ...entitytax,
+          ...entityTax,
           created_at: generateTimestamp(),
         })
         .select('*')
@@ -37,6 +37,7 @@ export class EntityTaxesService {
         );
       }
       const { entity_name, id } = data;
+      
       this.slackService.sendText(`✅ [ENTITY] Successfully created 👉 ${entity_name} 👉 id: https://v4.allocations.com/entities_taxes/${id}`, {
         channel: "taxes-logs-v4"
       });
@@ -82,8 +83,8 @@ export class EntityTaxesService {
 
   async update(paramId: string, req: any) {
     try {
-      const { body: entitytax, user } = req;
-      if (!entitytax) {
+      const { body: entityTax, user } = req;
+      if (!entityTax) {
         throw new HttpException(
           'Missing body',
           HttpStatus.FORBIDDEN,
@@ -92,7 +93,7 @@ export class EntityTaxesService {
 
       const { data, error } = await this.supabase
         .from('entities_taxes')
-        .update({ ...entitytax, updated_at: generateTimestamp() })
+        .update({ ...entityTax, updated_at: generateTimestamp() })
         .eq('id', paramId)
         .select()
         .single();
