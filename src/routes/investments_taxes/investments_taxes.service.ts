@@ -102,9 +102,31 @@ export class InvestmentsTaxesService {
       }
 
       const { id } = data;
+
       this.slackService.sendText(`🟢 [INVESTMENT] Updated 👉 https://v4.allocations.com/investments_taxes/${id}`, {
         channel: "taxes-logs-v4"
       });
+
+      const { data: dataHistory, error: dataError } = await this.supabase
+        .from('investments_taxes_history')
+        .insert(data)
+        .select('*')
+        .single();
+
+      if (dataError) {
+        console.error('Supabase error:', dataError.message);
+        throw new HttpException(
+          `History: ${error.message}`,
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const { history_id }: any = dataHistory;
+
+      this.slackService.sendText(`⏱️ [INVESTMENT] History saved 👉 https://v4.allocations.com/investments_taxes/${id}/history/${history_id}`, {
+        channel: "taxes-logs-v4"
+      });
+
       return data;
     } catch (error) {
       this.slackService.sendText(`🔴 [INVESTMENT] Failed to update 👉 ${error.message} 👉 https://v4.allocations.com/investments_taxes/${paramId}`, {
