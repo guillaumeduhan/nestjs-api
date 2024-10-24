@@ -104,13 +104,36 @@ export class EntityTaxesService {
           HttpStatus.FORBIDDEN,
         );
       }
+
       const { entity_name, id } = data;
+
       this.slackService.sendText(`🟢 [ENTITY] Updated 👉 ${entity_name} 👉 https://v4.allocations.com/entities_taxes/${id}`, {
         channel: "taxes-logs-v4"
       });
+
+      const { data: dataHistory, error: dataError } = await this.supabase
+        .from('entities_taxes_history')
+        .insert(data)
+        .select('*')
+        .single();
+
+      if (dataError) {
+        console.error('Supabase error:', dataError.message);
+        throw new HttpException(
+          `History: ${error.message}`,
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const { history_id }: any = dataHistory;
+
+      this.slackService.sendText(`⏱️ [ENTITY] History saved 👉 ${entity_name} 👉 https://v4.allocations.com/entities_taxes/${id}/history/${history_id}`, {
+        channel: "taxes-logs-v4"
+      });
+
       return data;
     } catch (error) {
-      this.slackService.sendText(`🔴 [ENTITY] Failed to update 👉 ${error.message} 👉 https://v4.allocations.com/entities_taxes/${paramId}`, {
+      this.slackService.sendText(`🔴 [ENTITY] Update failed 👉 ${error.message} 👉 https://v4.allocations.com/entities_taxes/${paramId}`, {
         channel: "taxes-logs-v4"
       });
       throw new HttpException({
