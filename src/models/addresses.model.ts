@@ -34,13 +34,16 @@ export class Addresses {
   nickname?: string;
 
   @Column({ type: 'text', nullable: true })
-  phone?: string;
+  phoneNumber?: string;
 
   @Column({ type: 'text', nullable: true })
-  postalcode?: string;
+  postalCode?: string;
 
   @Column({ type: 'text', nullable: true })
   region?: string;
+
+  @Column({ type: 'text', nullable: true })
+  state?: string;
 
   @Column({ type: 'text', nullable: true })
   streetAddressLine1?: string;

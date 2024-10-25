@@ -9,6 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Addresses } from './addresses.model';
+import { Closes } from './closes.model';
 import { Deals } from './deals.model';
 import { EntitiesTaxes } from './entities-taxes.model';
 import { Identities } from './identities.model';
@@ -32,20 +34,37 @@ export class Entities {
   @Column({ type: 'text', nullable: true })
   countryOfFormation?: string;
 
+  @ManyToOne(() => Closes)
+  @JoinColumn({ name: 'closes' })
+  closes: Closes;
+
   @CreateDateColumn({ type: 'timestamp without time zone', default: () => 'now()' })
   createdAt?: Date;
 
   @Column({ type: 'date', nullable: true })
   dateOfFormation?: Date;
 
-  @DeleteDateColumn({ type: 'timestamp without time zone', nullable: true })
-  deletedAt?: Date;
-
   @Column({ type: 'text', nullable: true })
   deletedBy?: string;
 
+  @DeleteDateColumn({ type: 'timestamp without time zone', nullable: true })
+  deletedAt?: Date;
+
+  @ManyToOne(() => Identities)
+  @JoinColumn({ name: 'fund_manager_identity_id' })
+  fundManagerIdentity: Identities;
+
   @Column({ type: 'text', nullable: true })
   ein?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  identityId?: string;
+
+  @Column({ type: 'text', nullable: true, default: 'delaware' })
+  jurisdiction?: string;
+
+  @Column({ type: 'text', nullable: true })
+  legalName?: string;
 
   @Column({ type: 'uuid', nullable: true })
   mailingAddressId?: string;
@@ -84,6 +103,9 @@ export class Entities {
   status?: string;
 
   @Column({ type: 'text', nullable: true })
+  structure?: string;
+
+  @Column({ type: 'text', nullable: true })
   taxesProvider?: string;
 
   @Column({ type: 'text', nullable: true })
@@ -95,39 +117,27 @@ export class Entities {
   @UpdateDateColumn({ type: 'timestamp without time zone', default: () => 'now()' })
   updatedAt?: Date;
 
-  @Column({ type: 'uuid', nullable: false, default: () => 'auth.uid()' })
-  userId: string;
-
   @Column({ type: 'uuid', nullable: true })
   updatedBy?: string;
 
-  @Column({ type: 'text', nullable: true, default: 'delaware' })
-  jurisdiction?: string;
+  @Column({ type: 'uuid', nullable: false, default: () => 'auth.uid()' })
+  userId: string;
 
-  @Column({ type: 'text', nullable: true, default: 'standard' })
-  structure?: string;
-
-  @Column({ type: 'text', nullable: true })
-  legalName?: string;
-
-  @ManyToOne(() => Identities)
-  @JoinColumn({ name: 'identity_id' })
-  identity: Identities;
-
-  @ManyToOne(() => Identities)
-  @JoinColumn({ name: 'fund_manager_identity_id' })
-  fundManagerIdentity: Identities;
+  constructor(partial: Partial<Entities> = {}) {
+    Object.assign(this, partial);
+  }
 }
-
 
 export interface EntitiesRelations {
   // describe navigational properties here
+  addresses?: Addresses;
+  closes?: Closes[];
   deals?: Deals[];
-  organization?: Organizations;
   entitiesTaxes?: EntitiesTaxes[];
   entitiesTaxesMetadata?: any[]; // TODO
   investmentsTaxes?: InvestmentsTaxes[];
   ledgers?: LedgerWithRelations[];
+  organization?: Organizations;
   partnershipRepresentative?: Identities;
   partnershipRepresentativeDesignatedIndividual?: Identities;
 }

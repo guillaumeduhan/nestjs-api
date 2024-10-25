@@ -3,9 +3,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
+import { Closes } from './closes.model';
 
 @Entity('assets', { schema: 'v4' })
 export class Assets {
@@ -29,6 +32,10 @@ export class Assets {
 
   @Column({ type: 'text', nullable: true })
   portfolioCompanyPhone: string;
+
+  @ManyToOne(() => Closes)
+  @JoinColumn({ name: 'closes' })
+  closes: Closes;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()' })
   createdAt: Date;

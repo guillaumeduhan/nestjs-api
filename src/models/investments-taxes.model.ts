@@ -153,4 +153,8 @@ export class InvestmentsTaxes {
 
   @UpdateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
   updatedAt?: Date;
+
+  constructor(partial: Partial<InvestmentsTaxes> = {}) {
+    Object.assign(this, partial);
+  }
 }

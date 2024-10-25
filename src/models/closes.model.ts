@@ -1,8 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Investments } from './investments.model';
 // import { ClosesInvestments } from './closes-investments.model';
-import { Deals, DealsWithRelations } from './deals.model';
 import { AssetsWithRelations } from './assets.model';
+import { Deals } from './deals.model';
 import { Entities } from './entities.model';
 // import { ClosesAssetTransactions } from './closes-asset-transactions.model';
 import { Assets } from './assets.model';
@@ -29,11 +29,11 @@ export class Closes {
   @Column({ type: 'uuid', nullable: true, name: 'entities_id' })
   entitiesId: string;
 
-  @ManyToOne(() => Entities, (entity) => entity.closes)
+  @OneToMany(() => Entities, (entity) => entity.closes, { cascade: true })
   @JoinColumn({ name: 'entities_id' })
   entity: Entities;
 
-  @OneToMany(() => Investments, (investment) => investment.close, { cascade: true })
+  @OneToMany(() => Investments, (investment) => investment.closes, { cascade: true })
   investments: Investments[];
 
   @Column({ type: 'numeric', nullable: false, name: 'portfolio_wire_amount' })
@@ -51,7 +51,7 @@ export class Closes {
   @Column({ type: 'timestamp with time zone', nullable: true, name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @OneToMany(() => Assets, (asset) => asset.close, { cascade: true })
+  @OneToMany(() => Assets, (asset) => asset.closes, { cascade: true })
   assets: AssetsWithRelations[];
 
   // @OneToMany(() => ClosesAssetTransactions, (closesAssetTransaction) => closesAssetTransaction.close)

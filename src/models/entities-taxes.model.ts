@@ -29,6 +29,9 @@ export class EntitiesTaxes {
   @Column({ type: 'uuid', name: 'batch', nullable: true })
   batch?: number | null;
 
+  @Column({ type: 'number', name: 'calculator_version', nullable: true })
+  calculatorVersion?: string | null;
+
   @Column({ type: 'float', name: 'entity_beginning_capital', nullable: true })
   entityBeginningCapital?: number;
 
@@ -64,6 +67,12 @@ export class EntitiesTaxes {
 
   @Column({ type: 'float', name: 'entity_ending_long_term_assets', nullable: true })
   entityEndingLongTermAssets?: number;
+
+  @CreateDateColumn({ type: 'timestamp with time zone', name: 'entity_formation_date', nullable: true })
+  entityFormationDate?: Date;
+
+  @PrimaryGeneratedColumn('uuid', { name: 'entity_id' })
+  entityId?: string | null;
 
   @Column({ type: 'boolean', name: 'entity_has_foreign_investors', default: false })
   entityHasForeignInvestors: boolean;

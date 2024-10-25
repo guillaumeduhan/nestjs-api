@@ -13,12 +13,12 @@ import { InvestmentsTaxesService } from './investments_taxes.service';
 
 @ApiTags('investments_taxes')
 @Controller('investments_taxes')
-export class InvestmentTaxesController {
+export class InvestmentsTaxesController {
   constructor(private readonly investmentTaxesService: InvestmentsTaxesService) { } name
 
   @UseGuards(SupabaseGuard)
   @Post()
-  @ApiOperation({ summary: 'Create a new investment tax' }) 
+  @ApiOperation({ summary: 'Create a new investment tax' })
   @ApiResponse({ status: 201, description: 'Investment tax created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async create(@Request() req) {
@@ -27,7 +27,7 @@ export class InvestmentTaxesController {
 
   @UseGuards(SupabaseGuard)
   @Get(':id')
-  @ApiOperation({ summary: 'Get investment tax by ID' }) 
+  @ApiOperation({ summary: 'Get investment tax by ID' })
   @ApiResponse({ status: 200, description: 'Investment tax found' })
   @ApiResponse({ status: 204, description: 'No changes made' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
@@ -40,7 +40,7 @@ export class InvestmentTaxesController {
 
   @UseGuards(SupabaseGuard)
   @Patch(':id')
-  @ApiOperation({ summary: 'Update an existing investment tax' }) 
+  @ApiOperation({ summary: 'Update an existing investment tax' })
   @ApiResponse({ status: 200, description: 'Investment tax updated successfully' })
   @ApiResponse({ status: 204, description: 'No changes made' })
   @ApiResponse({ status: 400, description: 'Invalid input' })

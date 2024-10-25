@@ -5,17 +5,18 @@ import {
   DeleteDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Assets } from './assets.model';
 import { BankAccounts } from './bank-accounts.model';
+import { Closes } from './closes.model';
 import { Entities } from './entities.model';
 import { Identities } from './identities.model';
-import { Organizations } from './organizations.model';
 import { Investments } from './investments.model';
-import { Assets } from './assets.model';
-import { Closes } from './closes.model';
+import { Organizations } from './organizations.model';
 
 @Entity({ schema: 'v4', name: 'deals' })
 @Check(`source IN ('platform', 'migration')`)
@@ -161,6 +162,9 @@ export class Deals {
   @ManyToOne(() => BankAccounts)
   @JoinColumn({ name: 'bank_account_id' })
   bankAccount: BankAccounts;
+
+  @OneToMany(() => Closes, (close) => close.deal)
+  closes?: Closes[];
 }
 
 

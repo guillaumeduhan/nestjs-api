@@ -41,19 +41,19 @@ export class TaxCalculatorService {
             (close.investments ?? []).reduce(
               (investmentsContributions, inv) => {
                 if (
-                  inv.managementFeePercent === null &&
+                  inv.managementFeePercentage === null &&
                   inv.managementFeesDollars === null &&
                   inv.capitalWiredAmount &&
                   inv.capitalWiredAmount > 0
                 ) {
                   return investmentsContributions + (inv.capitalWiredAmount ?? 0);
                 }
-                if (inv.subscriptionAmount && inv.subscriptionAmount > 0) {
+                if (inv.amount && inv.amount > 0) {
                   confidenceReports.push({
                     confidence: 0.6,
                     dropReasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
                   });
-                  return investmentsContributions + (inv.subscriptionAmount ?? 0);
+                  return investmentsContributions + (inv.amount ?? 0);
                 }
                 return investmentsContributions;
               },
@@ -82,8 +82,8 @@ export class TaxCalculatorService {
         closeContributions +
         (close.investments ?? []).reduce((amount, inv) => {
           let overridePercentFee = null;
-          if (inv.managementFeePercent !== null) {
-            let invPercent = inv.managementFeePercent;
+          if (inv.managementFeePercentage !== null) {
+            let invPercent = inv.managementFeePercentage;
             if (invPercent < 0) {
               negativeCheck = true;
               confidenceReports.push({
@@ -91,8 +91,8 @@ export class TaxCalculatorService {
                 dropReasons: [{ key: 'NEGATIVE_MANAGEMENT_FEE_PERCENT_OVERRIDE_FOUND', context: inv.id }],
               });
             }
-            if (inv.managementFeePercent >= 1) {
-              invPercent = parseFloat((inv.managementFeePercent / 100).toPrecision(8));
+            if (inv.managementFeePercentage >= 1) {
+              invPercent = parseFloat((inv.managementFeePercentage / 100).toPrecision(8));
             }
             overridePercentFee = invPercent * fullFees;
           }
@@ -246,12 +246,12 @@ export class TaxCalculatorService {
                     if (inv.capitalWiredAmount && inv.capitalWiredAmount > 0) {
                       return investmentsContributions + (inv.capitalWiredAmount ?? 0);
                     }
-                    if (inv.subscriptionAmount && inv.subscriptionAmount > 0) {
+                    if (inv.amount && inv.amount > 0) {
                       confidenceReports.push({
                         confidence: 0.6,
                         dropReasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
                       });
-                      return investmentsContributions + (inv.subscriptionAmount ?? 0);
+                      return investmentsContributions + (inv.amount ?? 0);
                     }
                     return investmentsContributions + (inv.capitalWiredAmount ?? 0);
                   }, 0)
@@ -346,8 +346,8 @@ export class TaxCalculatorService {
                   if (inv.capitalWiredAmount && inv.capitalWiredAmount > 0) {
                     return investmentsContributions + (inv.capitalWiredAmount ?? 0);
                   }
-                  if (inv.subscriptionAmount && inv.subscriptionAmount > 0) {
-                    return investmentsContributions + (inv.subscriptionAmount ?? 0);
+                  if (inv.amount && inv.amount > 0) {
+                    return investmentsContributions + (inv.amount ?? 0);
                   }
                   return investmentsContributions;
                 },
@@ -384,13 +384,13 @@ export class TaxCalculatorService {
         entityEin: entity.ein,
         entityFormationDate: entity.dateOfFormation,
         entityStreetAddress: this.useValue(
-          entity.streetAddress,
-          mergeStrings([entity.organization?.addressLine1, entity.organization?.addressLine2]),
+          entity.addresses.streetAddressLine1,
+          mergeStrings([entity.addresses?.streetAddressLine1, entity.addresses?.streetAddressLine2]),
         ),
-        entityCity: this.useValue(entity.city, entity.organization?.city),
-        entityState: this.useValue(entity.state, entity.organization?.region),
-        entityPostalCode: this.useValue(entity.postalCode, entity.organization?.postalCode),
-        entityPhoneNumber: this.useValue(entity.phoneNumber, entity.partnershipRepresentative?.phone),
+        entityCity: this.useValue(entity.addresses.city, entity.addresses?.city),
+        entityState: this.useValue(entity.addresses.state, entity.addresses?.region),
+        entityPostalCode: this.useValue(entity.addresses.postalCode, entity.addresses?.postalCode),
+        entityPhoneNumber: this.useValue(entity.addresses.phoneNumber, entity.partnershipRepresentative?.phone),
         entityType: entity?.type?.includes('LP') ? 'LP' : 'LLC',
         entitySatisfiesReceiptsAndAssets: true,
         entityBeginningCash: priorYearEntityTaxRecord?.result?.entityEndingCash ?? 0,
@@ -455,18 +455,18 @@ export class TaxCalculatorService {
         partnerIndex: priorYearTaxRecord?.result?.partnerIndex,
         status: 'needs-customer-approval',
         investmentId: investment.id,
-        investorIdentitiesId: investment.identitiesId,
+        investorIdentitiesId: investment.identityId,
         investorLegalName: investment.identity?.legalName,
         investorTaxId: this.useValue(investment?.identity?.taxId, priorYearTaxRecord?.result?.investorTaxId),
         investorStreetAddress: mergeStrings([
-          investment?.identity?.addressLine_1,
-          investment?.identity?.addressLine_2,
+          investment?.identity?.addresses?.streetAddressLine1,
+          investment?.identity?.addresses?.streetAddressLine2,
         ]),
-        investorCity: investment.identity?.city,
-        investorState: investment.identity?.region,
-        investorPostalCode: investment.identity?.postalCode,
-        investorCountry: investment.identity?.country,
-        investorEmail: investment?.identity?.userEmail,
+        investorCity: investment.identity?.addresses?.city,
+        investorState: investment.identity?.addresses?.region,
+        investorPostalCode: investment.identity?.addresses?.postalCode,
+        investorCountry: investment.identity?.addresses?.country,
+        investorEmail: investment?.identity?.email,
         investorIsUsDomestic: investment.identity?.usDomestic,
         investorEntityType: this.useValue(
           ['individual', ''].includes((investment?.identity?.type ?? '').toLowerCase())
@@ -474,7 +474,7 @@ export class TaxCalculatorService {
             : investment?.identity?.entityType,
           priorYearTaxRecord?.result?.investorEntityType,
         ),
-        investorEntityIsDisregarded: investment.identity?.entityIsDisregarded,
+        investorEntityIsDisregarded: investment.identity?.isDisregarded,
         investorContributions: investorContribution.result.yearContributions,
         dealId: investment.deal?.id,
         entityId: entity.id ?? investment.deal?.entity?.id,
@@ -496,6 +496,9 @@ export class TaxCalculatorService {
         taxYear: taxYear,
         calculatorVersion: this._VERSION,
         investment: investment,
+        deal: investment.deal, // Ensure the deal is provided
+        entity: entity ?? investment.deal?.entity, // Ensure the entity is provided
+        recordVersion: 1, // Add recordVersion or use an appropriate default value
       } as InvestmentsTaxes),
       confidenceReport: this.hoistConfidenceReports(
         priorYearTaxRecord.confidenceReport,
@@ -527,7 +530,7 @@ export class TaxCalculatorService {
     const yearDealContributionsData = await this.dealContributions(entity.deals ?? [], taxYear, false);
 
     const currentYearManagementFeeLedgers = (entity.ledgers ?? []).filter(
-      l => l.categoriesId === this._MANAGEMENT_FEES_CATEGORY_ID && dayjs(l.entryDate).isSame(taxYear, 'year')
+      (l:any) => l.categoriesId === this._MANAGEMENT_FEES_CATEGORY_ID && dayjs(l.entryDate).isSame(taxYear, 'year')
     );
 
     for (const deal of entity.deals ?? []) {
@@ -593,12 +596,12 @@ export class TaxCalculatorService {
                 if (inv.capitalWiredAmount && inv.capitalWiredAmount > 0) {
                   return investmentsContributions + (inv.capitalWiredAmount ?? 0);
                 }
-                if (inv.subscriptionAmount && inv.subscriptionAmount > 0) {
+                if (inv.amount && inv.amount > 0) {
                   confidenceReports.push({
                     confidence: 0.6,
                     dropReasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
                   });
-                  return investmentsContributions + (inv.subscriptionAmount ?? 0);
+                  return investmentsContributions + (inv.amount ?? 0);
                 }
                 return investmentsContributions;
               },
@@ -681,7 +684,7 @@ export class TaxCalculatorService {
     taxYear: string,
   ): Promise<ResultWithConfidence<InvestmentsTaxes | undefined>> {
     const priorYear = parseInt(taxYear) - 1;
-    const record = (investment.investmentsTaxes ?? []).find(
+    const record = (investment?.investmentsTaxes ?? []).find(
       (r: InvestmentsTaxes) => parseInt(r.taxYear ?? '0') === priorYear,
     );
     return {

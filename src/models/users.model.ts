@@ -4,4 +4,4 @@ import { Entity, PrimaryGeneratedColumn } from 'typeorm';
 export class Users {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-}
+};

@@ -9,8 +9,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Deals } from './deals.model';
-import { Identities } from './identities.model';
+import { Identities, IdentitiesWithRelations } from './identities.model';
 import { InvestmentsTaxes } from './investments-taxes.model';
+import { Addresses } from './addresses.model';
+import { Closes } from './closes.model';
 
 @Entity({ schema: 'v4', name: 'investments' })
 export class Investments {
@@ -21,10 +23,17 @@ export class Investments {
   amount?: number;
 
   @Column({ type: 'numeric', nullable: true, default: 0 })
+  capitalWiredAmount?: number;
+
+  @Column({ type: 'numeric', nullable: true, default: 0 })
   carryFeePercentage?: number;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
   createdAt?: Date;
+
+  @ManyToOne(() => Closes)
+  @JoinColumn({ name: 'closes' })
+  closes: Closes;
 
   @ManyToOne(() => Deals)
   @JoinColumn({ name: 'deal_id' })
@@ -92,8 +101,10 @@ export class Investments {
 export interface InvestmentsRelations {
   // describe navigational properties here
   deal?: Deals;
-  identity?: Identities;
-  investmentsTaxes?: InvestmentsTaxes
+  close?: Closes;
+  identity_id?: IdentitiesWithRelations;
+  identity?: IdentitiesWithRelations;
+  investmentsTaxes?: InvestmentsTaxes[]
 }
 
 export type InvestmentsWithRelations = Investments & InvestmentsRelations;
