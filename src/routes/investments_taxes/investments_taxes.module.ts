@@ -2,11 +2,11 @@ import { SupabaseModule } from '@/auth/supabase/supabase.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SlackModule } from 'nestjs-slack';
-import { InvestmentTaxesController } from './investments_taxes.controller';
+import { InvestmentsTaxesController } from './investments_taxes.controller';
 import { InvestmentsTaxesService } from './investments_taxes.service';
 
 @Module({
-  controllers: [InvestmentTaxesController],
+  controllers: [InvestmentsTaxesController],
   providers: [InvestmentsTaxesService],
   imports: [SupabaseModule, ConfigModule,
     SlackModule.forRoot({

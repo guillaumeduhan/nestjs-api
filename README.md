@@ -2,6 +2,20 @@
 
 Repository containing the Tax Allocation API only for internal requests. Built with NestJS, Passport, & Supabase.
 
+## Table of Contents
+- [Getting Started](#getting-started)
+- [Environment Variables](#env)
+- [API Prefix](#prefix)
+- [Ping Endpoint](#ping)
+- [Authentication](#authentication)
+- [Swagger Documentation](#swagger)
+- [Guides](#guides)
+  - [Create a New Route](#create-a-new-route)
+  - [Modules, Controllers & Services](#modules-controllers--services)
+- [Taxes](#taxes)
+  - [Routes (Deprecated)](#routes-old-version-probably-deprecated)
+- [Taxes Calculator Service](#taxes-calculator-service)
+
 ## Getting started
 For now, the API does not have a Docker image and runs only on the terminal.
 Install + dev environment, please use ``make dev`` to use daemon (or watcher):
@@ -111,7 +125,7 @@ export class CatsService {
 
 ## Taxes
 
-### Routes (temporary)
+### Routes (old version, probably deprecated)
 
 | Pathname                                               | Description                                                                     |
 |--------------------------------------------------------|---------------------------------------------------------------------------------|
@@ -143,3 +157,28 @@ export class CatsService {
 | `/taxes/rollback/{entityId}/{taxYear}/{rollbackVersion}`| Rolls back entity taxes to a specified version.                                 |
 | `/taxes/sync-locked-status/{taxYear}`                  | Synchronizes the locked status of tax records for a given year.                 |
 | `/taxes/update-tax-records/{taxYear}`                  | Updates tax records for a specific tax year.                                    |
+
+## Taxes calculator service
+
+Here is the calculation generation service for creating our `entities_taxes` and `investments_taxes` records.
+
+| Function Name                                     | Description                                                                                                           |
+|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `applicableDealContributions`                     | Calculates the total contributions for a given array of deals in a specified tax year, returning confidence reports.  |
+| `calculateDealManagementFeesWithReductions`       | Calculates total management fees after reductions, identifying and reporting any invalid overrides in confidence.     |
+| `calculateEntityEndingCash`                       | Determines the ending cash balance for an entity, taking prior year data and ledger entries into account.             |
+| `calculateEndingLongTermAssets`                   | Computes the ending balance of long-term assets for an entity based on deals closed within a specific tax year.       |
+| `calculateInvestorContribution`                   | Calculates investor contributions and ownership for a given investment, considering prior year records if available.  |
+| `calculateInvestorForeignTaxCreditLimitationApplicable` | Returns whether a foreign tax credit limitation applies to the investor, defaulting to `false`.                       |
+| `calculateOwnershipPercentage`                    | Computes the ownership percentage based on investor and total deal contributions.                                      |
+| `createEntityTaxRecord`                           | Creates an entity tax record for a specified year, incorporating calculations for cash, assets, and liabilities.      |
+| `createInvestmentTaxRecordForYear`                | Generates a tax record for an investment for a given year, using various contribution and expense data.               |
+| `createTaxRecordsForYear`                         | Builds a tax record bundle for an entity for a specific year, incorporating multiple records and a confidence report. |
+| `dealContributions`                               | Calculates the contributions for a set of deals over a given tax year, providing confidence reporting.                |
+| `getEntityExpenses`                               | Retrieves and calculates entity expenses for a specified year, optionally using prior year records as a baseline.     |
+| `getPriorYearEntityTaxRecord`                     | Fetches the prior year tax record for an entity, if available, with confidence reporting.                             |
+| `getPriorYearInvestmentTaxRecord`                 | Retrieves the previous year’s tax record for an investment, if available.                                             |
+| `generate1065SnapshotData`                        | Produces snapshot data for Form 1065, including assets, liabilities, and capital accounts, using a tax record.        |
+| `hoistConfidenceReports`                          | Aggregates multiple confidence reports, providing an average confidence score and merged drop reasons.                |
+| `useNumericValue`                                 | Returns the first valid numeric value from a list of inputs, or a specified default value if none are found.          |
+| `useValue`                                        | Returns the first non-empty string from a list of inputs, or `null` if none are found.                                |
