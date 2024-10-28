@@ -6,7 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import { Closes } from './closes.model';
 
@@ -16,7 +16,7 @@ export class Assets {
   id: string;
 
   @Column({ type: 'text', nullable: false })
-  legalName: string;
+  legal_name: string;
 
   @Column({ type: 'text', nullable: true })
   name: string;
@@ -25,52 +25,51 @@ export class Assets {
   subtype: string;
 
   @Column({ type: 'text', nullable: true })
-  locationCountry: string;
+  location_country: string;
 
   @Column({ type: 'text', nullable: true })
-  portfolioCompanyContactName: string;
+  portfolio_company_contact_name: string;
 
   @Column({ type: 'text', nullable: true })
-  portfolioCompanyPhone: string;
+  portfolio_company_phone: string;
 
   @ManyToOne(() => Closes)
   @JoinColumn({ name: 'closes' })
   closes: Closes;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()' })
-  createdAt: Date;
+  created_at?: Date;
 
   @UpdateDateColumn({ type: 'timestamp with time zone', default: () => 'now()' })
-  updatedAt: Date;
+  updated_at?: Date;
 
   @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
-  deletedAt: Date;
+  deleted_at?: Date;
 
   @Column({ type: 'text', nullable: true })
-  deletedBy: string;
+  deleted_by?: string;
 
   @Column({ type: 'uuid', nullable: true, default: () => 'auth.uid()' })
-  userId: string;
+  user_id?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  addressId: string;
+  address_id?: string;
 
   @Column({ type: 'text', nullable: true })
-  websiteUrl: string;
+  website_url?: string;
 
   @Column({ type: 'text', nullable: true })
-  type: string;
+  type?: string;
 
   @Column({ type: 'text', nullable: true })
-  securityType: string;
+  security_type?: string;
 
   @Column({ type: 'text', nullable: true })
-  jurisdiction: string;
+  jurisdiction?: string;
 }
 
 export interface AssetsRelations {
-  close?: any;
-  // describe navigational properties here
+  closes?: Closes;
 }
 
 export type AssetsWithRelations = Assets & AssetsRelations;

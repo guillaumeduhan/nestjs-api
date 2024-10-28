@@ -12,40 +12,39 @@ import { LedgerCategories } from './ledger-categories.model';
 
 @Entity({ schema: 'public', name: 'ledger' })
 export class Ledger {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'numeric', nullable: false })
-  amount: number;
-
-  @Column({ type: 'boolean', nullable: false })
-  debit: boolean;
-
-  @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: false })
-  createdAt: Date;
-
   @ManyToOne(() => LedgerCategories)
   @JoinColumn({ name: 'categories_id' })
   category: LedgerCategories;
 
+  @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: false })
+  created_at?: Date;
+
+  @Column({ type: 'boolean', nullable: false })
+  debit: boolean;
+
   @Column({ type: 'text', nullable: true })
   description?: string;
+
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ManyToOne(() => Entities)
   @JoinColumn({ name: 'entities_id' })
   entity: Entities;
 
   @Column({ type: 'timestamp with time zone', nullable: false, default: () => 'now()' })
-  entryDate: Date;
+  entry_date: Date;
+
+  @Column({ type: 'numeric', nullable: false })
+  subscription_amount: number;
 
   @UpdateDateColumn({ type: 'timestamp with time zone', nullable: false, default: () => 'now()' })
-  updatedAt: Date;
+  updated_at?: Date;
 }
 
 export interface LedgerRelations {
-  // describe navigational properties here
-  entity: Entities;
-  category: LedgerCategories;
+  entity?: Entities;
+  category?: LedgerCategories;
 }
 
 export type LedgerWithRelations = Ledger & LedgerRelations;

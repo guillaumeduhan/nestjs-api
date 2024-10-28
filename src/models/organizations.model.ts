@@ -9,13 +9,13 @@ import {
 export class Organizations {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-  
+
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: false })
-  createdAt: Date;
+  created_at?: Date;
 
   @Column({ type: 'text', nullable: true })
   name?: string;
 
   @Column({ type: 'uuid', nullable: true, default: () => 'auth.uid()' })
-  userId?: string;
+  user_id?: string;
 }

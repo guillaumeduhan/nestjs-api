@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { v4 as randomUUID } from 'uuid';
 
 /**
  Merges an array of strings with a given joiner
@@ -13,4 +13,4 @@ export const mergeStrings = (
   return strings.filter(Boolean).join(joiner);
 };
 
-export const UUIDv4 = () => crypto.randomUUID();
+export const UUIDv4 = () => randomUUID();

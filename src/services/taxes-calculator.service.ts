@@ -1,4 +1,5 @@
-import { Deals } from '@/models/deals.model';
+import { Closes, ClosesWithRelations } from '@/models/closes.model';
+import { Deals, DealsWithRelations } from '@/models/deals.model';
 import { EntitiesTaxes } from '@/models/entities-taxes.model';
 import { Entities, EntitiesWithRelations } from '@/models/entities.model';
 import { InvestmentsTaxes } from '@/models/investments-taxes.model';
@@ -18,6 +19,19 @@ import { Repository } from 'typeorm';
 
 export type EntitiesRelations = Entities & EntitiesWithRelations;
 
+const hoistConfidenceReports = (
+  ...reports: ConfidenceReport[]
+): ConfidenceReport => {
+  const total_confidence =
+    reports.reduce((acc, report) => acc + report.confidence, 0) /
+    reports.length;
+  const merged_drop_reasons = reports.map(r => r.drop_reasons).flat();
+  return {
+    confidence: reports.length > 0 ? total_confidence : 1,
+    drop_reasons: merged_drop_reasons,
+  };
+};
+
 @Injectable()
 export class TaxCalculatorService {
   private readonly _VERSION = 'api_0.63';
@@ -30,32 +44,41 @@ export class TaxCalculatorService {
     private readonly investmentsTaxesRepository: Repository<InvestmentsTaxes>,
   ) { }
 
-  async applicableDealContributions(deals: Deals[], taxYear: string): Promise<ResultWithConfidence<number>> {
-    const confidenceReports: ConfidenceReport[] = [];
-    const data = deals.reduce((overallContributions, deal) => {
+  async applicableDealContributions(deals: Deals[], tax_year: string): Promise<ResultWithConfidence<number>> {
+    const confidence_reports: ConfidenceReport[] = [];
+    const data = deals.reduce((overall_contributions, deal: DealsWithRelations) => {
       return (
-        overallContributions +
-        (deal.closes ?? []).reduce((closeContributions, close) => {
+        overall_contributions +
+        (deal.closes ?? []).reduce((close_contributions, close: Closes) => {
           return (
-            closeContributions +
+            close_contributions +
             (close.investments ?? []).reduce(
-              (investmentsContributions, inv) => {
+              (investments_contributions, inv: InvestmentsWithRelations) => {
                 if (
-                  inv.managementFeePercentage === null &&
-                  inv.managementFeesDollars === null &&
-                  inv.capitalWiredAmount &&
-                  inv.capitalWiredAmount > 0
+                  inv.management_fee_percentage === null &&
+                  inv.management_fees_dollars === null
                 ) {
-                  return investmentsContributions + (inv.capitalWiredAmount ?? 0);
+                  if (inv.capital_wired_amount && inv.capital_wired_amount > 0) {
+                    return (
+                      investments_contributions + (inv.capital_wired_amount ?? 0)
+                    );
+                  }
+                  if (inv.subscription_amount && inv.subscription_amount > 0) {
+                    confidence_reports.push({
+                      confidence: 0.6,
+                      drop_reasons: [
+                        {
+                          key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT',
+                          context: `${inv.id} - ${inv.identity.email} - Using Subscription Amount ${inv.subscription_amount}`,
+                        },
+                      ],
+                    });
+                    return (
+                      investments_contributions + (inv.subscription_amount ?? 0)
+                    );
+                  }
                 }
-                if (inv.amount && inv.amount > 0) {
-                  confidenceReports.push({
-                    confidence: 0.6,
-                    dropReasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
-                  });
-                  return investmentsContributions + (inv.amount ?? 0);
-                }
-                return investmentsContributions;
+                return investments_contributions;
               },
               0,
             )
@@ -63,102 +86,101 @@ export class TaxCalculatorService {
         }, 0)
       );
     }, 0);
-
     return {
       result: data,
-      confidenceReport: this.hoistConfidenceReports(...confidenceReports),
+      confidence_report: hoistConfidenceReports(...confidence_reports),
     };
   }
 
   async calculateDealManagementFeesWithReductions(
-    fullFees: number,
-    closes: any[],
+    full_fees: number,
+    closes: ClosesWithRelations[],
   ): Promise<ResultWithConfidence<number>> {
-    const confidenceReports: ConfidenceReport[] = [];
-    let negativeCheck = false;
+    const confidence_reports: ConfidenceReport[] = [];
+    let negative_check = false;
 
-    const reductions = closes.reduce((closeContributions, close) => {
+    const reductions = closes.reduce((close_contributions, close: Closes) => {
       return (
-        closeContributions +
-        (close.investments ?? []).reduce((amount, inv) => {
-          let overridePercentFee = null;
-          if (inv.managementFeePercentage !== null) {
-            let invPercent = inv.managementFeePercentage;
-            if (invPercent < 0) {
-              negativeCheck = true;
-              confidenceReports.push({
+        close_contributions +
+        (close.investments ?? []).reduce((subscription_amount, inv: InvestmentsWithRelations) => {
+          let override_percent_fee = null;
+          if (inv.management_fee_percentage !== null) {
+            let inv_percent = inv.management_fee_percentage;
+            if (inv_percent < 0) {
+              negative_check = true;
+              confidence_reports.push({
                 confidence: 0.8,
-                dropReasons: [{ key: 'NEGATIVE_MANAGEMENT_FEE_PERCENT_OVERRIDE_FOUND', context: inv.id }],
+                drop_reasons: [{ key: 'NEGATIVE_MANAGEMENT_FEE_PERCENT_OVERRIDE_FOUND', context: inv.id }],
               });
             }
-            if (inv.managementFeePercentage >= 1) {
-              invPercent = parseFloat((inv.managementFeePercentage / 100).toPrecision(8));
+            if (inv.management_fee_percentage >= 1) {
+              inv_percent = parseFloat((inv.management_fee_percentage / 100).toPrecision(8));
             }
-            overridePercentFee = invPercent * fullFees;
+            override_percent_fee = inv_percent * full_fees;
           }
-          return amount + (overridePercentFee ?? inv.managementFeesDollars ?? 0);
+          return subscription_amount + (override_percent_fee ?? inv.management_fees_dollars ?? 0);
         }, 0)
       );
     }, 0);
 
-    if (negativeCheck) {
+    if (negative_check) {
       return {
         result: -1,
-        confidenceReport: this.hoistConfidenceReports(...confidenceReports),
+        confidence_report: this.hoistConfidenceReports(...confidence_reports),
       };
     }
 
-    let finalResult = fullFees - reductions;
-    if (reductions > fullFees) {
-      confidenceReports.push({
+    let final_result = full_fees - reductions;
+    if (reductions > full_fees) {
+      confidence_reports.push({
         confidence: 0.8,
-        dropReasons: [
-          { key: 'MANAGEMENT_FEE_OVERRIDES_TOO_LARGE', context: `Without Overrides: ${fullFees} - With Overrides: ${finalResult}` },
+        drop_reasons: [
+          { key: 'MANAGEMENT_FEE_OVERRIDES_TOO_LARGE', context: `Without Overrides: ${full_fees} - With Overrides: ${final_result}` },
         ],
       });
-      finalResult = -1;
+      final_result = -1;
     }
 
     return {
-      result: finalResult,
-      confidenceReport: this.hoistConfidenceReports(...confidenceReports),
+      result: final_result,
+      confidence_report: this.hoistConfidenceReports(...confidence_reports),
     };
   }
 
   async calculateEntityEndingCash(
     entity: EntitiesRelations,
-    taxYear: string,
-    priorYearTaxes?: EntitiesTaxes,
+    tax_year: string,
+    prior_year_taxes?: EntitiesTaxes,
   ): Promise<ResultWithConfidence<number>> {
-    const hasLedger = !!(entity?.ledgers && entity.ledgers.length > 0);
-    const hasPriorYear = !!priorYearTaxes;
-    const initialCash = hasPriorYear ? priorYearTaxes?.entityEndingCash ?? 0 : 0;
+    const has_ledger = !!(entity?.ledgers && entity.ledgers.length > 0);
+    const has_prior_year = !!prior_year_taxes;
+    const initial_cash = has_prior_year ? prior_year_taxes?.entity_ending_cash ?? 0 : 0;
 
-    if (!hasLedger) {
+    if (!has_ledger) {
       return {
-        result: initialCash,
-        confidenceReport: { confidence: 1, dropReasons: [] },
+        result: initial_cash,
+        confidence_report: { confidence: 1, drop_reasons: [] },
       };
     }
 
-    const currentCash = (entity.ledgers as LedgerWithRelations[]).reduce(
+    const current_cash = (entity.ledgers as LedgerWithRelations[]).reduce(
       (acc, l) => {
-        if (l.entryDate.getFullYear() === parseInt(taxYear) || !hasPriorYear) {
-          if (l.category.type === 'expense') return acc + -Math.abs(l.amount);
-          else return acc + Math.abs(l.amount);
+        if (l.entry_date.getFullYear() === parseInt(tax_year) || !has_prior_year) {
+          if (l.category && l.category.type === 'expense') return acc + -Math.abs(l.subscription_amount);
+          else return acc + Math.abs(l.subscription_amount);
         }
         return acc;
       },
-      initialCash,
+      initial_cash,
     );
 
     return {
-      result: currentCash >= 0 ? currentCash : 0,
-      confidenceReport: {
-        confidence: currentCash >= 0 ? 1 : 0.1,
-        dropReasons: [
-          ...(currentCash < 0
-            ? [{ key: 'ENTITY_CASH_BELOW_ZERO', context: `Entity year-end cash is ${currentCash}` }]
+      result: current_cash >= 0 ? current_cash : 0,
+      confidence_report: {
+        confidence: current_cash >= 0 ? 1 : 0.1,
+        drop_reasons: [
+          ...(current_cash < 0
+            ? [{ key: 'ENTITY_CASH_BELOW_ZERO', context: `Entity year-end cash is ${current_cash}` }]
             : []),
         ],
       },
@@ -167,93 +189,94 @@ export class TaxCalculatorService {
 
   async calculateEndingLongTermAssets(
     entity: EntitiesRelations,
-    taxYear: string,
-    priorYearTaxes?: EntitiesTaxes,
+    tax_year: string,
+    prior_year_taxes?: EntitiesTaxes,
   ): Promise<ResultWithConfidence<number>> {
-    const hasPriorYear = !!priorYearTaxes;
-    const initialAssets = hasPriorYear ? priorYearTaxes?.entityEndingLongTermAssets ?? 0 : 0;
+    const has_prior_year = !!prior_year_taxes;
+    const initial_assets = has_prior_year ? prior_year_taxes?.entity_ending_long_term_assets ?? 0 : 0;
 
     if (
       entity.deals &&
       ((entity.deals as Deals[]) ?? []).reduce(
-        (_count, current) => current?.closes?.filter(c => dayjs(c.closedDate).isSame(taxYear, 'year'))?.length ?? 0,
+        (_count, current) => current?.closes?.filter(c => dayjs(c.closed_date).isSame(tax_year, 'year'))?.length ?? 0,
         0,
       ) <= 0
     ) {
       return {
-        result: initialAssets,
-        confidenceReport: { confidence: 1, dropReasons: [] },
+        result: initial_assets,
+        confidence_report: { confidence: 1, drop_reasons: [] },
       };
     }
 
-    const currentAssets = ((entity.deals as Deals[]) ?? []).reduce(
+    const current_assets = ((entity.deals as Deals[]) ?? []).reduce(
       (acc, d) =>
         acc +
         (d.closes ?? []).reduce(
-          (closeAcc, c) => closeAcc + (dayjs(c.closedDate).isSame(taxYear, 'year') ? c.portfolioWireAmount : 0),
+          (close_acc, c) => close_acc + (dayjs(c.closed_date).isSame(tax_year, 'year') ? c.portfolio_wire_amount : 0),
           0,
         ),
-      initialAssets,
+      initial_assets,
     );
 
     return {
-      result: currentAssets,
-      confidenceReport: { confidence: 1, dropReasons: [] },
+      result: current_assets,
+      confidence_report: { confidence: 1, drop_reasons: [] },
     };
   }
 
   async calculateInvestorContribution(
-    investment: InvestmentsWithRelations,
-    entity: EntitiesRelations,
-    taxYear: string,
-    fullDealContributions: number,
-    yearDealContributions: number,
-    applicableContributions: number,
-    fullDealFees: number,
-    dealFees: number,
+    investment: any,
+    entity: EntitiesWithRelations,
+    tax_year: string,
+    full_deal_contributions: number,
+    year_deal_contributions: number,
+    applicable_contributions: number,
+    full_deal_fees: number,
+    deal_fees: number,
     expenses: number,
-    priorYearTaxRecord?: any,
+    prior_year_tax_record?: any,
   ): Promise<
     ResultWithConfidence<{
-      totalContributions: number;
-      yearContributions: number;
-      currentOwnershipPercentage: number;
-      currentCapitalAccountAmount: number;
-      expensesNetValue: number;
+      total_contributions: number;
+      year_contributions: number;
+      current_ownership_percentage: number;
+      current_capital_account_amount: number;
+      expenses_net_value: number;
     }>
   > {
-    const getContributions = (
-      investmentsId: string,
+    const get_contributions = (
+      investments_id: string,
       deals: Deals[],
-      fullOrYear: boolean,
+      full_or_year: boolean,
     ): ResultWithConfidence<number> => {
-      const confidenceReports: ConfidenceReport[] = [];
-      const data = deals.reduce((overallContributions, deal) => {
+      const confidence_reports: ConfidenceReport[] = [];
+      const data = deals.reduce((overall_contributions, deal) => {
         return (
-          overallContributions +
+          overall_contributions +
           (deal.closes ?? [])
-            .filter(c =>
-              fullOrYear
-                ? c.closedDate!.getFullYear().toString() <= taxYear
-                : c.closedDate!.getFullYear().toString() === taxYear,
+            .filter((c: Closes) => c.closed_date !== null)
+            .filter((c: Closes) =>
+              full_or_year
+                ? c.closed_date.getFullYear().toString() <= tax_year
+                : c.closed_date.getFullYear().toString() === tax_year
             )
-            .reduce((closeContributions, close) => {
+            .reduce((close_contributions, close) => {
               return (
-                closeContributions +
+                close_contributions +
                 (close.investments ?? [])
-                  .filter(i => i.id === investmentsId)
-                  .reduce((investmentsContributions, inv) => {
-                    if (inv.capitalWiredAmount && inv.capitalWiredAmount > 0) {
-                      return investmentsContributions + (inv.capitalWiredAmount ?? 0);
+                  .filter(i => i.id === investments_id)
+                  .reduce((investments_contributions, inv) => {
+                    if (inv.capital_wired_amount && inv.capital_wired_amount > 0) {
+                      return investments_contributions + (inv.capital_wired_amount ?? 0);
                     }
-                    if (inv.amount && inv.amount > 0) {
-                      confidenceReports.push({
+                    if (inv.subscription_amount && inv.subscription_amount > 0) {
+                      confidence_reports.push({
                         confidence: 0.6,
-                        dropReasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
+                        drop_reasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
                       });
-                      return investmentsContributions + (inv.amount ?? 0);
+                      return investments_contributions + (inv.subscription_amount ?? 0);
                     }
-                    return investmentsContributions + (inv.capitalWiredAmount ?? 0);
+                    return investments_contributions + (inv.capital_wired_amount ?? 0);
                   }, 0)
               );
             }, 0)
@@ -262,51 +285,51 @@ export class TaxCalculatorService {
 
       return {
         result: data,
-        confidenceReport: this.hoistConfidenceReports(...confidenceReports),
+        confidence_report: this.hoistConfidenceReports(...confidence_reports),
       };
     };
 
-    const totalInvestorContributions = getContributions(investment.id, entity.deals, true);
-    const currentYearInvestorContributions = getContributions(investment.id, entity.deals, false);
+    const total_investor_contributions = get_contributions(investment.id, entity.deals, true);
+    const current_year_investor_contributions = get_contributions(investment.id, entity.deals, false);
 
-    const currentOwnershipPercentage = this.calculateOwnershipPercentage(
-      totalInvestorContributions.result,
-      fullDealContributions,
+    const current_ownership_percentage = this.calculateOwnershipPercentage(
+      total_investor_contributions.result,
+      full_deal_contributions,
     );
 
-    const currentYearOwnershipPercentage = this.calculateOwnershipPercentage(
-      currentYearInvestorContributions.result,
-      yearDealContributions,
+    const current_year_ownership_percentage = this.calculateOwnershipPercentage(
+      current_year_investor_contributions.result,
+      year_deal_contributions,
     );
 
-    const currentExpensesShare = parseFloat(
-      ((expenses - dealFees) * currentYearOwnershipPercentage).toPrecision(5),
+    const current_expenses_share = parseFloat(
+      ((expenses - deal_fees) * current_year_ownership_percentage).toPrecision(5),
     );
 
-    let currentCapitalAccountAmount =
-      totalInvestorContributions.result -
-      (priorYearTaxRecord ? 0 : investment.managementFeesDollars ?? 0) -
-      (priorYearTaxRecord ? 0 : currentExpensesShare);
+    let current_capital_account_amount =
+      total_investor_contributions.result -
+      (prior_year_tax_record ? 0 : investment.management_fees_dollars ?? 0) -
+      (prior_year_tax_record ? 0 : current_expenses_share);
 
     if (
-      priorYearTaxRecord &&
-      currentYearInvestorContributions.result === 0 &&
-      currentExpensesShare + (priorYearTaxRecord ? 0 : investment.managementFeesDollars ?? 0) === 0
+      prior_year_tax_record &&
+      current_year_investor_contributions.result === 0 &&
+      current_expenses_share + (prior_year_tax_record ? 0 : investment.management_fees_dollars ?? 0) === 0
     ) {
-      currentCapitalAccountAmount = priorYearTaxRecord.investorEndingCapitalAccountAmount;
+      current_capital_account_amount = prior_year_tax_record.investor_ending_capital_account_amount;
     }
 
     return {
       result: {
-        totalContributions: totalInvestorContributions.result,
-        yearContributions: currentYearInvestorContributions.result,
-        currentOwnershipPercentage,
-        currentCapitalAccountAmount,
-        expensesNetValue: (priorYearTaxRecord ? 0 : currentExpensesShare) ?? 0,
+        total_contributions: total_investor_contributions.result,
+        year_contributions: current_year_investor_contributions.result,
+        current_ownership_percentage,
+        current_capital_account_amount,
+        expenses_net_value: (prior_year_tax_record ? 0 : current_expenses_share) ?? 0,
       },
-      confidenceReport: this.hoistConfidenceReports(
-        totalInvestorContributions.confidenceReport,
-        currentYearInvestorContributions.confidenceReport,
+      confidence_report: this.hoistConfidenceReports(
+        total_investor_contributions.confidence_report,
+        current_year_investor_contributions.confidence_report,
       ),
     };
   }
@@ -314,296 +337,296 @@ export class TaxCalculatorService {
   async calculateInvestorForeignTaxCreditLimitationApplicable(
     _investment: InvestmentsWithRelations,
     _entity: EntitiesRelations,
-    _taxYear: string,
+    _tax_year: string,
   ): Promise<boolean> {
     return false;
   }
 
-  calculateOwnershipPercentage(investorContributions: number, dealContributions: number): number {
-    if (dealContributions === 0) dealContributions = 1;
-    return parseFloat((investorContributions / dealContributions).toPrecision(10));
+  calculateOwnershipPercentage(investor_contributions: number, deal_contributions: number): number {
+    if (deal_contributions === 0) deal_contributions = 1;
+    return parseFloat((investor_contributions / deal_contributions).toPrecision(10));
   }
 
   async createEntityTaxRecord(
     entity: EntitiesRelations,
-    taxYear: string,
+    tax_year: string,
   ): Promise<ResultWithConfidence<EntitiesTaxes>> {
-    const priorYearEntityTaxRecord = await this.getPriorYearEntityTaxRecord(entity, taxYear);
+    const prior_year_entity_tax_record = await this.getPriorYearEntityTaxRecord(entity, tax_year);
 
     const deals = (entity.deals ?? []).filter(d => {
-      return (d.closes ?? []).find(c => c.closedDate?.getFullYear().toString() === taxYear);
+      return (d.closes ?? []).find(c => c.closed_date?.getFullYear().toString() === tax_year);
     });
 
-    const newContributions = deals.reduce((overallContributions, deal) => {
+    const new_contributions = deals.reduce((overall_contributions, deal) => {
       return (
-        overallContributions +
-        (deal.closes ?? []).reduce((closeContributions, close) => {
-          if (close.closedDate?.getFullYear() === parseInt(taxYear)) {
+        overall_contributions +
+        (deal.closes ?? []).reduce((close_contributions, close) => {
+          if (close.closed_date?.getFullYear() === parseInt(tax_year)) {
             return (
-              closeContributions +
+              close_contributions +
               (close.investments ?? []).reduce(
-                (investmentsContributions, inv) => {
-                  if (inv.capitalWiredAmount && inv.capitalWiredAmount > 0) {
-                    return investmentsContributions + (inv.capitalWiredAmount ?? 0);
+                (investments_contributions, inv) => {
+                  if (inv.capital_wired_amount && inv.capital_wired_amount > 0) {
+                    return investments_contributions + (inv.capital_wired_amount ?? 0);
                   }
-                  if (inv.amount && inv.amount > 0) {
-                    return investmentsContributions + (inv.amount ?? 0);
+                  if (inv.subscription_amount && inv.subscription_amount > 0) {
+                    return investments_contributions + (inv.subscription_amount ?? 0);
                   }
-                  return investmentsContributions;
+                  return investments_contributions;
                 },
                 0,
               )
             );
-          } else return closeContributions;
+          } else return close_contributions;
         }, 0)
       );
     }, 0);
 
-    const endingCash = await this.calculateEntityEndingCash(entity, taxYear, priorYearEntityTaxRecord.result);
+    const ending_cash = await this.calculateEntityEndingCash(entity, tax_year, prior_year_entity_tax_record.result);
     const expenses = await this.getEntityExpenses(
       entity,
-      priorYearEntityTaxRecord.result?.entityEndingCurrentLiabilities,
-      taxYear,
+      prior_year_entity_tax_record.result?.entity_ending_current_liabilities,
+      tax_year,
     );
-    const endingLongTermAssets = await this.calculateEndingLongTermAssets(entity, taxYear, priorYearEntityTaxRecord.result);
+    const ending_long_term_assets = await this.calculateEndingLongTermAssets(entity, tax_year, prior_year_entity_tax_record.result);
 
     return {
       result: new EntitiesTaxes({
-        ...priorYearEntityTaxRecord?.result,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        ...prior_year_entity_tax_record?.result,
+        created_at: new Date(),
+        updated_at: new Date(),
         provider: 'CCH',
-        providerId: undefined,
+        provider_id: undefined,
         id: UUIDv4(),
-        '1065FilesId': undefined,
-        entityId: entity.id,
-        entityName: entity.name,
-        taxYear: taxYear,
-        filingStatus: 'needs-customer-approval',
-        isInitialReturn: !priorYearEntityTaxRecord.result,
-        entityEin: entity.ein,
-        entityFormationDate: entity.dateOfFormation,
-        entityStreetAddress: this.useValue(
-          entity.addresses.streetAddressLine1,
-          mergeStrings([entity.addresses?.streetAddressLine1, entity.addresses?.streetAddressLine2]),
+        '1065_files_id': undefined,
+        entity_id: entity.id,
+        entity_name: entity.name,
+        tax_year: tax_year,
+        filing_status: 'needs-customer-approval',
+        is_initial_return: !prior_year_entity_tax_record.result,
+        entity_ein: entity.ein,
+        entity_formation_date: entity.date_of_formation,
+        entity_street_address: this.useValue(
+          entity.addresses.street_address_line1,
+          mergeStrings([entity.addresses?.street_address_line1, entity.addresses?.street_address_line2]),
         ),
-        entityCity: this.useValue(entity.addresses.city, entity.addresses?.city),
-        entityState: this.useValue(entity.addresses.state, entity.addresses?.region),
-        entityPostalCode: this.useValue(entity.addresses.postalCode, entity.addresses?.postalCode),
-        entityPhoneNumber: this.useValue(entity.addresses.phoneNumber, entity.partnershipRepresentative?.phone),
-        entityType: entity?.type?.includes('LP') ? 'LP' : 'LLC',
-        entitySatisfiesReceiptsAndAssets: true,
-        entityBeginningCash: priorYearEntityTaxRecord?.result?.entityEndingCash ?? 0,
-        entityBeginningLongTermAssets: priorYearEntityTaxRecord?.result?.entityEndingLongTermAssets ?? 0,
-        entityEndingLongTermAssets: endingLongTermAssets.result,
-        entityBeginningCapital: Math.max(
-          (priorYearEntityTaxRecord?.result?.entityEndingLongTermAssets ?? 0) +
-          (priorYearEntityTaxRecord.result?.entityEndingCash ?? 0),
+        entity_city: this.useValue(entity.addresses.city, entity.addresses?.city),
+        entity_state: this.useValue(entity.addresses.state, entity.addresses?.region),
+        entity_postal_code: this.useValue(entity.addresses.postal_code, entity.addresses?.postal_code),
+        entity_phone_number: this.useValue(entity.addresses.phone_number, entity.partnership_representative?.phone),
+        entity_type: entity?.type?.includes('LP') ? 'LP' : 'LLC',
+        entity_satisfies_receipts_and_assets: true,
+        entity_beginning_cash: prior_year_entity_tax_record?.result?.entity_ending_cash ?? 0,
+        entity_beginning_long_term_assets: prior_year_entity_tax_record?.result?.entity_ending_long_term_assets ?? 0,
+        entity_ending_long_term_assets: ending_long_term_assets.result,
+        entity_beginning_capital: Math.max(
+          (prior_year_entity_tax_record?.result?.entity_ending_long_term_assets ?? 0) +
+          (prior_year_entity_tax_record.result?.entity_ending_cash ?? 0),
           0,
         ),
-        entityBeginningCurrentLiabilities: expenses.result.beginningExpenses ?? 0,
-        entityEndingCurrentLiabilities: expenses.result.endingExpenses > 0
-          ? this.useNumericValue(0, expenses.result.endingExpenses)
-          : priorYearEntityTaxRecord?.result?.entityEndingCurrentLiabilities ?? 0,
-        entityCapitalContributions: newContributions + (priorYearEntityTaxRecord?.result?.entityCapitalContributions ?? 0),
-        entityEndingCash: endingCash.result,
-        calculatorVersion: this._VERSION,
+        entity_beginning_current_liabilities: expenses.result.beginning_expenses ?? 0,
+        entity_ending_current_liabilities: expenses.result.ending_expenses > 0
+          ? this.useNumericValue(0, expenses.result.ending_expenses)
+          : prior_year_entity_tax_record?.result?.entity_ending_current_liabilities ?? 0,
+        entity_capital_contributions: new_contributions + (prior_year_entity_tax_record?.result?.entity_capital_contributions ?? 0),
+        entity_ending_cash: ending_cash.result,
+        calculator_version: this._VERSION,
       }),
-      confidenceReport: this.hoistConfidenceReports(
-        priorYearEntityTaxRecord.confidenceReport,
-        endingCash.confidenceReport,
-        expenses.confidenceReport,
-        endingLongTermAssets.confidenceReport,
+      confidence_report: this.hoistConfidenceReports(
+        prior_year_entity_tax_record.confidence_report,
+        ending_cash.confidence_report,
+        expenses.confidence_report,
+        ending_long_term_assets.confidence_report,
       ),
     };
   }
 
   async createInvestmentTaxRecordForYear(
-    investment: InvestmentsWithRelations,
+    investment: any,
     entity: EntitiesRelations,
-    taxYear: string,
-    fullDealContributions: number,
-    yearDealContributions: number,
-    applicableContributions: number,
-    fullDealFees: number,
-    dealFees: number,
+    tax_year: string,
+    full_deal_contributions: number,
+    year_deal_contributions: number,
+    applicable_contributions: number,
+    full_deal_fees: number,
+    deal_fees: number,
   ): Promise<ResultWithConfidence<InvestmentsTaxes>> {
-    const priorYearTaxRecord = await this.getPriorYearInvestmentTaxRecord(entity, investment, taxYear);
-    const priorYearEntityTaxRecord = await this.getPriorYearEntityTaxRecord(entity, taxYear);
+    const prior_year_tax_record = await this.getPriorYearInvestmentTaxRecord(entity, investment, tax_year);
+    const prior_year_entity_tax_record = await this.getPriorYearEntityTaxRecord(entity, tax_year);
     const expenses = await this.getEntityExpenses(
       entity,
-      priorYearEntityTaxRecord.result?.entityEndingCurrentLiabilities,
-      taxYear,
+      prior_year_entity_tax_record.result?.entity_ending_current_liabilities,
+      tax_year,
     );
 
-    const investorContribution = await this.calculateInvestorContribution(
+    const investor_contribution = await this.calculateInvestorContribution(
       investment,
       entity,
-      taxYear,
-      fullDealContributions,
-      yearDealContributions,
-      applicableContributions,
-      fullDealFees,
-      dealFees,
-      expenses.result.endingExpenses - expenses.result.beginningExpenses,
-      priorYearTaxRecord?.result,
+      tax_year,
+      full_deal_contributions,
+      year_deal_contributions,
+      applicable_contributions,
+      full_deal_fees,
+      deal_fees,
+      expenses.result.ending_expenses - expenses.result.beginning_expenses,
+      prior_year_tax_record?.result,
     );
 
     return {
       result: new InvestmentsTaxes({
         id: UUIDv4(),
-        partnerIndex: priorYearTaxRecord?.result?.partnerIndex,
+        partner_index: prior_year_tax_record?.result?.partner_index,
         status: 'needs-customer-approval',
-        investmentId: investment.id,
-        investorIdentitiesId: investment.identityId,
-        investorLegalName: investment.identity?.legalName,
-        investorTaxId: this.useValue(investment?.identity?.taxId, priorYearTaxRecord?.result?.investorTaxId),
-        investorStreetAddress: mergeStrings([
-          investment?.identity?.addresses?.streetAddressLine1,
-          investment?.identity?.addresses?.streetAddressLine2,
+        investment_id: investment.id,
+        investor_identities_id: investment.identity_id,
+        investor_legal_name: investment.identity?.legal_name,
+        investor_tax_id: this.useValue(investment?.identity?.tax_id, prior_year_tax_record?.result?.investor_tax_id),
+        investor_street_address: mergeStrings([
+          investment?.identity?.addresses?.street_address_line1,
+          investment?.identity?.addresses?.street_address_line2,
         ]),
-        investorCity: investment.identity?.addresses?.city,
-        investorState: investment.identity?.addresses?.region,
-        investorPostalCode: investment.identity?.addresses?.postalCode,
-        investorCountry: investment.identity?.addresses?.country,
-        investorEmail: investment?.identity?.email,
-        investorIsUsDomestic: investment.identity?.usDomestic,
-        investorEntityType: this.useValue(
+        investor_city: investment.identity?.addresses?.city,
+        investor_state: investment.identity?.addresses?.region,
+        investor_postal_code: investment.identity?.addresses?.postal_code,
+        investor_country: investment.identity?.addresses?.country,
+        investor_email: investment?.identity?.email,
+        investor_is_us_domestic: investment.identity?.us_domestic,
+        investor_entity_type: this.useValue(
           ['individual', ''].includes((investment?.identity?.type ?? '').toLowerCase())
             ? 'Individual'
-            : investment?.identity?.entityType,
-          priorYearTaxRecord?.result?.investorEntityType,
+            : investment?.identity?.entity_type,
+          prior_year_tax_record?.result?.investor_entity_type,
         ),
-        investorEntityIsDisregarded: investment.identity?.isDisregarded,
-        investorContributions: investorContribution.result.yearContributions,
-        dealId: investment.deal?.id,
-        entityId: entity.id ?? investment.deal?.entity?.id,
-        investorForeignTaxCreditLimitationApplicable:
-          await this.calculateInvestorForeignTaxCreditLimitationApplicable(investment, entity, taxYear),
-        investorBeginningCapitalAccountAmount: this.useNumericValue(
+        investor_entity_is_disregarded: investment.identity?.is_disregarded,
+        investor_contributions: investor_contribution.result.year_contributions,
+        deal_id: investment.deal?.id,
+        entity_id: entity.id ?? investment.deal?.entity?.id,
+        investor_foreign_tax_credit_limitation_applicable:
+          await this.calculateInvestorForeignTaxCreditLimitationApplicable(investment, entity, tax_year),
+        investor_beginning_capital_account_amount: this.useNumericValue(
           0,
-          priorYearTaxRecord?.result?.investorEndingCapitalAccountAmount,
+          prior_year_tax_record?.result?.investor_ending_capital_account_amount,
         ),
-        investorBeginningProfitPercentage: priorYearTaxRecord?.result?.investorEndingProfitPercentage ?? 0,
-        investorBeginningLossPercentage: priorYearTaxRecord?.result?.investorEndingLossPercentage ?? 0,
-        investorBeginningCapitalPercentage: priorYearTaxRecord?.result?.investorEndingCapitalPercentage ?? 0,
-        investorOwnershipPercent: investorContribution.result.currentOwnershipPercentage ?? 0,
-        investorEndingCapitalAccountAmount: investorContribution.result.currentCapitalAccountAmount ?? 0,
-        investorEndingProfitPercentage: investorContribution.result.currentOwnershipPercentage ?? 0,
-        investorEndingLossPercentage: investorContribution.result.currentOwnershipPercentage ?? 0,
-        investorEndingCapitalPercentage: investorContribution.result.currentOwnershipPercentage ?? 0,
-        investorCurrentYearNetIncomeLoss: investorContribution.result.expensesNetValue,
-        taxYear: taxYear,
-        calculatorVersion: this._VERSION,
+        investor_beginning_profit_percentage: prior_year_tax_record?.result?.investor_ending_profit_percentage ?? 0,
+        investor_beginning_loss_percentage: prior_year_tax_record?.result?.investor_ending_loss_percentage ?? 0,
+        investor_beginning_capital_percentage: prior_year_tax_record?.result?.investor_ending_capital_percentage ?? 0,
+        investor_ownership_percent: investor_contribution.result.current_ownership_percentage ?? 0,
+        investor_ending_capital_account_amount: investor_contribution.result.current_capital_account_amount ?? 0,
+        investor_ending_profit_percentage: investor_contribution.result.current_ownership_percentage ?? 0,
+        investor_ending_loss_percentage: investor_contribution.result.current_ownership_percentage ?? 0,
+        investor_ending_capital_percentage: investor_contribution.result.current_ownership_percentage ?? 0,
+        investor_current_year_net_income_loss: investor_contribution.result.expenses_net_value,
+        tax_year: tax_year,
+        calculator_version: this._VERSION,
         investment: investment,
-        deal: investment.deal, // Ensure the deal is provided
-        entity: entity ?? investment.deal?.entity, // Ensure the entity is provided
-        recordVersion: 1, // Add recordVersion or use an appropriate default value
+        deal: investment.deal,
+        entity: entity ?? investment.deal?.entity,
+        record_version: 1,
       } as InvestmentsTaxes),
-      confidenceReport: this.hoistConfidenceReports(
-        priorYearTaxRecord.confidenceReport,
-        investorContribution.confidenceReport,
+      confidence_report: this.hoistConfidenceReports(
+        prior_year_tax_record.confidence_report,
+        investor_contribution.confidence_report,
       ),
     };
   }
 
   async createTaxRecordsForYear(
     entity: EntitiesRelations,
-    taxYear: string,
-    ignoreDealsRequirement: boolean = false,
+    tax_year: string,
+    ignore_deals_requirement: boolean = false,
   ): Promise<TaxRecordsBundleDto> {
-    if ((!entity?.deals || entity?.deals.length < 1) && !ignoreDealsRequirement) {
+    if ((!entity?.deals || entity?.deals.length < 1) && !ignore_deals_requirement) {
       throw new HttpException('No Deal Records Present', HttpStatus.BAD_REQUEST);
     }
 
     const data = new TaxRecordsBundleDto({
-      entityTaxRecord: new EntitiesTaxes(),
-      investmentTaxRecords: [],
-      confidenceReport: { confidence: 0, dropReasons: [] },
-      sourceData: entity,
+      entity_tax_record: new EntitiesTaxes(),
+      investment_tax_records: [],
+      confidence_report: { confidence: 0, drop_reasons: [] },
+      source_data: entity,
     });
 
-    const confidenceReports: ConfidenceReport[] = [];
+    const confidence_reports: ConfidenceReport[] = [];
 
-    const applicableDealContributionsData = await this.applicableDealContributions(entity.deals ?? [], taxYear);
-    const fullDealContributionsData = await this.dealContributions(entity.deals ?? [], taxYear, true);
-    const yearDealContributionsData = await this.dealContributions(entity.deals ?? [], taxYear, false);
+    const applicable_deal_contributions_data = await this.applicableDealContributions(entity.deals ?? [], tax_year);
+    const full_deal_contributions_data = await this.dealContributions(entity.deals ?? [], tax_year, true);
+    const year_deal_contributions_data = await this.dealContributions(entity.deals ?? [], tax_year, false);
 
-    const currentYearManagementFeeLedgers = (entity.ledgers ?? []).filter(
-      (l:any) => l.categoriesId === this._MANAGEMENT_FEES_CATEGORY_ID && dayjs(l.entryDate).isSame(taxYear, 'year')
+    const current_year_management_fee_ledgers = (entity.ledgers ?? []).filter(
+      (l: any) => l.categories_id === this._MANAGEMENT_FEES_CATEGORY_ID && dayjs(l.entry_date).isSame(tax_year, 'year')
     );
 
     for (const deal of entity.deals ?? []) {
       const closes = (deal.closes ?? []).filter(
-        c => dayjs(c.closedDate).isSame(taxYear, 'year') || dayjs(c.closedDate).isBefore(taxYear, 'year')
+        c => dayjs(c.closed_date).isSame(tax_year, 'year') || dayjs(c.closed_date).isBefore(tax_year, 'year')
       );
 
-      let fullDealFees = currentYearManagementFeeLedgers.reduce((ledgerFees, ledger) => ledgerFees + ledger.amount, 0);
+      let full_deal_fees = current_year_management_fee_ledgers.reduce((ledger_fees, ledger) => ledger_fees + ledger.subscription_amount, 0);
 
-      const dealFees = await this.calculateDealManagementFeesWithReductions(
-        fullDealFees,
-        closes.filter(c => dayjs(c.closedDate).isSame(taxYear, 'year')),
+      const deal_fees = await this.calculateDealManagementFeesWithReductions(
+        full_deal_fees,
+        closes.filter(c => dayjs(c.closed_date).isSame(tax_year, 'year')),
       );
-      confidenceReports.push(dealFees.confidenceReport);
+      confidence_reports.push(deal_fees.confidence_report);
 
       for (const close of closes) {
         for (const investment of close.investments ?? []) {
           const record = await this.createInvestmentTaxRecordForYear(
             investment,
             entity,
-            taxYear,
-            fullDealContributionsData.result,
-            yearDealContributionsData.result,
-            applicableDealContributionsData.result,
-            fullDealFees,
-            dealFees.result,
+            tax_year,
+            full_deal_contributions_data.result,
+            year_deal_contributions_data.result,
+            applicable_deal_contributions_data.result,
+            full_deal_fees,
+            deal_fees.result,
           );
-          confidenceReports.push(record.confidenceReport);
-          data.investmentTaxRecords.push(record.result);
+          confidence_reports.push(record.confidence_report);
+          data.investment_tax_records.push(record.result);
         }
       }
     }
 
-    const entityTaxRecord = await this.createEntityTaxRecord(entity, taxYear);
-    const priorYearTaxRecord = await this.getPriorYearEntityTaxRecord(entity, taxYear);
-    const priorExpenses = priorYearTaxRecord.result?.entityPortfolioExpense;
+    const entity_tax_record = await this.createEntityTaxRecord(entity, tax_year);
+    const prior_year_tax_record = await this.getPriorYearEntityTaxRecord(entity, tax_year);
+    const prior_expenses = prior_year_tax_record.result?.entity_portfolio_expense;
 
-    data.entityTaxRecord = entityTaxRecord.result;
-    confidenceReports.push(entityTaxRecord.confidenceReport);
-    data.confidenceReport = this.hoistConfidenceReports(...confidenceReports);
-    data.snapshot1065Data = await this.generate1065SnapshotData(data.entityTaxRecord, priorExpenses ?? 0);
+    data.entity_tax_record = entity_tax_record.result;
+    confidence_reports.push(entity_tax_record.confidence_report);
+    data.confidence_report = this.hoistConfidenceReports(...confidence_reports);
+    data.snapshot_1065_data = await this.generate1065SnapshotData(data.entity_tax_record, prior_expenses ?? 0);
 
     return new TaxRecordsBundleDto(data);
   }
 
   async dealContributions(
     deals: Deals[],
-    taxYear: string,
-    fullOrYear: boolean,
+    tax_year: string,
+    full_or_year: boolean,
   ): Promise<ResultWithConfidence<number>> {
-    const confidenceReports: ConfidenceReport[] = [];
-    const data = deals.reduce((overallContributions, deal) => {
+    const confidence_reports: ConfidenceReport[] = [];
+    const data = deals.reduce((overall_contributions, deal) => {
       return (
-        overallContributions +
-        (fullOrYear
+        overall_contributions +
+        (full_or_year
           ? deal.closes ?? []
-          : deal.closes?.filter(c => dayjs(c.closedDate).isSame(taxYear, 'year')) ?? []
-        ).reduce((closeContributions, close) => {
+          : deal.closes?.filter(c => dayjs(c.closed_date).isSame(tax_year, 'year')) ?? []
+        ).reduce((close_contributions, close) => {
           return (
-            closeContributions +
+            close_contributions +
             (close.investments ?? []).reduce(
-              (investmentsContributions, inv) => {
-                if (inv.capitalWiredAmount && inv.capitalWiredAmount > 0) {
-                  return investmentsContributions + (inv.capitalWiredAmount ?? 0);
+              (investments_contributions, inv) => {
+                if (inv.capital_wired_amount && inv.capital_wired_amount > 0) {
+                  return investments_contributions + (inv.capital_wired_amount ?? 0);
                 }
-                if (inv.amount && inv.amount > 0) {
-                  confidenceReports.push({
+                if (inv.subscription_amount && inv.subscription_amount > 0) {
+                  confidence_reports.push({
                     confidence: 0.6,
-                    dropReasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
+                    drop_reasons: [{ key: 'INVESTOR_MISSING_CAPITAL_WIRED_AMOUNT', context: inv.id }],
                   });
-                  return investmentsContributions + (inv.amount ?? 0);
+                  return investments_contributions + (inv.subscription_amount ?? 0);
                 }
-                return investmentsContributions;
+                return investments_contributions;
               },
               0,
             )
@@ -614,30 +637,30 @@ export class TaxCalculatorService {
 
     return {
       result: data,
-      confidenceReport: this.hoistConfidenceReports(...confidenceReports),
+      confidence_report: this.hoistConfidenceReports(...confidence_reports),
     };
   }
 
   async getEntityExpenses(
     entity: EntitiesRelations,
-    priorYearExpensesFromRecord: number | undefined,
-    taxYear: string,
+    prior_year_expenses_from_record: number | undefined,
+    tax_year: string,
   ) {
-    const hasLedger = !!(entity?.ledgers && entity.ledgers.length > 0);
-    if (!hasLedger) {
+    const has_ledger = !!(entity?.ledgers && entity.ledgers.length > 0);
+    if (!has_ledger) {
       return {
-        result: { beginningExpenses: priorYearExpensesFromRecord ?? 0, endingExpenses: priorYearExpensesFromRecord ?? 0 },
-        confidenceReport: { confidence: 1, dropReasons: [] },
+        result: { beginning_expenses: prior_year_expenses_from_record ?? 0, ending_expenses: prior_year_expenses_from_record ?? 0 },
+        confidence_report: { confidence: 1, drop_reasons: [] },
       };
     }
 
-    const priorYearExpensesCalculated = (entity.ledgers as LedgerWithRelations[]).reduce(
+    const prior_year_expenses_calculated = (entity.ledgers as LedgerWithRelations[]).reduce(
       (acc, l) =>
         acc +
         (l.category.type === 'expense' &&
           l.category.name !== 'Asset Purchase' &&
-          l.entryDate.getFullYear() === parseInt(taxYear) - 1
-          ? l.amount
+          l.entry_date.getFullYear() === parseInt(tax_year) - 1
+          ? l.subscription_amount
           : 0),
       0,
     );
@@ -647,146 +670,145 @@ export class TaxCalculatorService {
         acc +
         (l.category.type === 'expense' &&
           l.category.name !== 'Asset Purchase' &&
-          l.entryDate.getFullYear() === parseInt(taxYear)
-          ? l.amount
+          l.entry_date.getFullYear() === parseInt(tax_year)
+          ? l.subscription_amount
           : 0),
-      priorYearExpensesCalculated > 0 ? priorYearExpensesCalculated : priorYearExpensesFromRecord,
+      prior_year_expenses_calculated > 0 ? prior_year_expenses_calculated : prior_year_expenses_from_record,
     );
 
-    const priorYearEntityTaxRecord = await this.getPriorYearEntityTaxRecord(entity, taxYear);
+    const prior_year_entity_tax_record = await this.getPriorYearEntityTaxRecord(entity, tax_year);
     return {
       result: {
-        beginningExpenses: priorYearEntityTaxRecord.result
-          ? priorYearExpensesCalculated > 0
-            ? priorYearExpensesCalculated
-            : priorYearExpensesFromRecord
+        beginning_expenses: prior_year_entity_tax_record.result
+          ? prior_year_expenses_calculated > 0
+            ? prior_year_expenses_calculated
+            : prior_year_expenses_from_record
           : 0,
-        endingExpenses: expenses,
+        ending_expenses: expenses,
       },
-      confidenceReport: { confidence: 1, dropReasons: [] },
+      confidence_report: { confidence: 1, drop_reasons: [] },
     };
   }
 
   async getPriorYearEntityTaxRecord(
     entity: EntitiesRelations,
-    taxYear: string,
+    tax_year: string,
   ): Promise<ResultWithConfidence<EntitiesTaxes | undefined>> {
-    const priorYear = parseInt(taxYear) - 1;
+    const prior_year = parseInt(tax_year) - 1;
     return {
-      result: (entity.entitiesTaxes ?? []).find((r: EntitiesTaxes) => parseInt(r.taxYear ?? '0') === priorYear),
-      confidenceReport: { confidence: 1, dropReasons: [] },
+      result: (entity.entities_taxes ?? []).find((r: EntitiesTaxes) => parseInt(r.tax_year ?? '0') === prior_year),
+      confidence_report: { confidence: 1, drop_reasons: [] },
     };
   }
 
   async getPriorYearInvestmentTaxRecord(
     entity: EntitiesRelations,
     investment: InvestmentsWithRelations,
-    taxYear: string,
+    tax_year: string,
   ): Promise<ResultWithConfidence<InvestmentsTaxes | undefined>> {
-    const priorYear = parseInt(taxYear) - 1;
-    const record = (investment?.investmentsTaxes ?? []).find(
-      (r: InvestmentsTaxes) => parseInt(r.taxYear ?? '0') === priorYear,
+    const prior_year = parseInt(tax_year) - 1;
+    const record = (investment?.investments_taxes ?? []).find(
+      (r: InvestmentsTaxes) => parseInt(r.tax_year ?? '0') === prior_year,
     );
     return {
       result: record,
-      confidenceReport: { confidence: 1, dropReasons: [] },
+      confidence_report: { confidence: 1, drop_reasons: [] },
     };
   }
 
   async generate1065SnapshotData(
-    entityTaxRecord: EntitiesTaxes,
-    priorExpenses: number,
+    entity_tax_record: EntitiesTaxes,
+    prior_expenses: number,
   ): Promise<TaxRecord1065_Snapshot> {
     const normalize = (input: number | undefined | null) => {
       return Math.max(0, input ?? 0);
     };
-    const calculateTotalAssetsBeginning = () => {
+    const calculate_total_assets_beginning = () => {
       return (
-        normalize(entityTaxRecord.entityBeginningLongTermAssets) +
-        normalize(entityTaxRecord.entityBeginningCash)
+        normalize(entity_tax_record.entity_beginning_long_term_assets) +
+        normalize(entity_tax_record.entity_beginning_cash)
       );
     };
 
-    const calculateTotalAssetsEnding = () => {
+    const calculate_total_assets_ending = () => {
       return (
-        normalize(entityTaxRecord.entityEndingLongTermAssets) +
-        normalize(entityTaxRecord.entityEndingCash)
+        normalize(entity_tax_record.entity_ending_long_term_assets) +
+        normalize(entity_tax_record.entity_ending_cash)
       );
     };
 
-    const calculateNetIncomeLoss = () => {
+    const calculate_net_income_loss = () => {
       return -(
-        normalize(entityTaxRecord.entityEndingCurrentLiabilities) -
-        normalize(entityTaxRecord.entityBeginningCurrentLiabilities)
+        normalize(entity_tax_record.entity_ending_current_liabilities) -
+        normalize(entity_tax_record.entity_beginning_current_liabilities)
       );
     };
 
-    const calculateCapitalContributed = () => {
-      let sourceData = normalize(entityTaxRecord.entityBeginningCapital);
+    const calculate_capital_contributed = () => {
+      let source_data = normalize(entity_tax_record.entity_beginning_capital);
 
       if (
-        entityTaxRecord?.entityCapitalContributions &&
-        entityTaxRecord.entityCapitalContributions > 0
+        entity_tax_record?.entity_capital_contributions &&
+        entity_tax_record.entity_capital_contributions > 0
       ) {
-        sourceData =
-          normalize(entityTaxRecord.entityCapitalContributions) -
-          normalize(priorExpenses);
+        source_data =
+          normalize(entity_tax_record.entity_capital_contributions) -
+          normalize(prior_expenses);
       }
 
-      return sourceData - normalize(entityTaxRecord.entityBeginningCapital);
+      return source_data - normalize(entity_tax_record.entity_beginning_capital);
     };
 
     return {
       SCHL: {
-        otherInvestmentsBeginningOfTaxYear: normalize(
-          entityTaxRecord.entityBeginningLongTermAssets,
+        other_investments_beginning_of_tax_year: normalize(
+          entity_tax_record.entity_beginning_long_term_assets,
         ),
-        otherInvestmentsEndingOfTaxYear: normalize(
-          entityTaxRecord.entityEndingLongTermAssets,
+        other_investments_ending_of_tax_year: normalize(
+          entity_tax_record.entity_ending_long_term_assets,
         ),
-        totalAssetsBeginningOfTaxYear: calculateTotalAssetsBeginning(),
-        totalAssetsEndingOfTaxYear: calculateTotalAssetsEnding(),
-        partnerCapitalAccountsBeginningOfTaxYear:
-          calculateTotalAssetsBeginning(),
-        partnerCapitalAccountsEndingOfTaxYear: calculateTotalAssetsEnding(),
-        totalLiabilitiesAndCapitalBeginningOfTaxYear:
-          calculateTotalAssetsBeginning(),
-        totalLiabilitiesAndCapitalEndingOfTaxYear: calculateTotalAssetsEnding(),
+        total_assets_beginning_of_tax_year: calculate_total_assets_beginning(),
+        total_assets_ending_of_tax_year: calculate_total_assets_ending(),
+        partner_capital_accounts_beginning_of_tax_year:
+          calculate_total_assets_beginning(),
+        partner_capital_accounts_ending_of_tax_year: calculate_total_assets_ending(),
+        total_liabilities_and_capital_beginning_of_tax_year:
+          calculate_total_assets_beginning(),
+        total_liabilities_and_capital_ending_of_tax_year: calculate_total_assets_ending(),
       },
       SCHM1: {
-        netIncomeLossPerBooks: calculateNetIncomeLoss(),
+        net_income_loss_per_books: calculate_net_income_loss(),
       },
       SCHM2: {
-        balanceAtBeginningOfYear: normalize(
-          entityTaxRecord.entityBeginningCapital,
+        balance_at_beginning_of_year: normalize(
+          entity_tax_record.entity_beginning_capital,
         ),
-        capitalContributedCash: calculateCapitalContributed(),
-        netIncomeLoss: calculateNetIncomeLoss(),
-        addLines1Through4:
-          normalize(entityTaxRecord.entityBeginningCapital) +
-          calculateCapitalContributed() +
-          calculateNetIncomeLoss(),
-        // TODO: Not implemented in the system yet
-        distributionsCash: 0,
-        balanceAtEndOfYear:
-          normalize(entityTaxRecord.entityBeginningCapital) +
-          calculateCapitalContributed() +
-          calculateNetIncomeLoss(),
+        capital_contributed_cash: calculate_capital_contributed(),
+        net_income_loss: calculate_net_income_loss(),
+        add_lines_1_through_4:
+          normalize(entity_tax_record.entity_beginning_capital) +
+          calculate_capital_contributed() +
+          calculate_net_income_loss(),
+        distributions_cash: 0,
+        balance_at_end_of_year:
+          normalize(entity_tax_record.entity_beginning_capital) +
+          calculate_capital_contributed() +
+          calculate_net_income_loss(),
       },
     };
   }
 
   hoistConfidenceReports(...reports: ConfidenceReport[]): ConfidenceReport {
-    const totalConfidence = reports.reduce((acc, report) => acc + report.confidence, 0) / reports.length;
-    const mergedDropReasons = reports.map(r => r.dropReasons).flat();
+    const total_confidence = reports.reduce((acc, report) => acc + report.confidence, 0) / reports.length;
+    const merged_drop_reasons = reports.map(r => r.drop_reasons).flat();
     return {
-      confidence: reports.length > 0 ? totalConfidence : 1,
-      dropReasons: mergedDropReasons,
+      confidence: reports.length > 0 ? total_confidence : 1,
+      drop_reasons: merged_drop_reasons,
     };
   }
 
-  useNumericValue(defaultValue = 0, ...args: Array<number | undefined | null>): number {
-    return args.find(i => i) ?? defaultValue;
+  useNumericValue(default_value = 0, ...args: Array<number | undefined | null>): number {
+    return args.find(i => i) ?? default_value;
   }
 
   useValue(...args: Array<string | undefined | null>): string | undefined | null {

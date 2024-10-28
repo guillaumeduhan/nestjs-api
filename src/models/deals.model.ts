@@ -5,8 +5,8 @@ import {
   DeleteDateColumn,
   Entity,
   JoinColumn,
-  OneToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -22,102 +22,122 @@ import { Organizations } from './organizations.model';
 @Check(`source IN ('platform', 'migration')`)
 export class Deals {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id?: string;
 
   @Column({ type: 'boolean', nullable: true })
-  advisorForgone?: boolean;
+  advisor_forgone?: boolean;
 
   @Column({ type: 'uuid', nullable: true })
-  advisorId?: string;
+  advisor_id?: string;
 
   @Column({ type: 'boolean', default: true, nullable: true })
-  agreeMsa?: boolean;
+  agree_msa?: boolean;
 
   @Column({ type: 'text', nullable: true })
-  availableNetworks?: string;
+  available_networks?: string;
+
+  @ManyToOne(() => BankAccounts)
+  @JoinColumn({ name: 'bank_account_id' })
+  bank_account?: BankAccounts;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 0, nullable: true })
-  carryFee?: number;
+  carry_fee?: number;
 
   @Column({ type: 'date', nullable: true })
-  closingDate?: Date;
+  closing_date?: Date;
+
+  @OneToMany(() => Closes, (close) => close.deal)
+  closes?: Closes[];
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  createdAt?: Date;
+  created_at?: Date;
 
   @DeleteDateColumn({ type: 'timestamp without time zone', nullable: true })
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @Column({ type: 'uuid', nullable: true })
-  deletedBy?: string;
+  deleted_by?: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 0, nullable: true })
-  depositFee?: number;
+  deposit_fee?: number;
 
   @Column({ type: 'text', nullable: true })
-  documentsProvider?: string;
+  documents_provider?: string;
 
   @Column({ type: 'text', nullable: true })
-  documentsProviderId?: string;
+  documents_provider_id?: string;
 
   @ManyToOne(() => Entities)
   @JoinColumn({ name: 'entity_id' })
-  entity: Entities;
+  entity?: Entities;
 
   @Column({ type: 'date', nullable: true })
-  estimatedClosingDate?: Date;
+  estimated_closing_date?: Date;
+
+  @Column({ type: 'text', default: 'None', nullable: true })
+  financial_statements?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  fundManagerId?: string;
+  fund_manager_id?: string;
+
+  @Column({ type: 'text', default: 'Accredited Investors (3c1)', nullable: true })
+  investor_type?: string;
+
+  @ManyToOne(() => Identities)
+  @JoinColumn({ name: 'identity_id' })
+  identity?: Identities;
 
   @Column({ type: 'numeric', default: 0, nullable: true })
-  lockupPeriod?: number;
+  lockup_period?: number;
 
   @Column({ type: 'text', nullable: true })
-  logoUrl?: string;
+  logo_url?: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 0, nullable: true })
-  managementFee?: number;
+  management_fee?: number;
 
   @Column({ type: 'text', default: 'none', nullable: true })
-  managementFeeFrequency?: string;
+  management_fee_frequency?: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 0, nullable: true })
-  managementFeePercent?: number;
+  management_fee_percent?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  maximumInvestmentAmount?: number;
+  maximum_investment_amount?: number;
 
   @Column({ type: 'text', nullable: true })
   memo?: string;
 
   @Column({ type: 'numeric', precision: 15, scale: 2, default: 0, nullable: true })
-  minimumInvestmentAmount?: number;
+  minimum_investment_amount?: number;
 
   @Column({ type: 'boolean', default: false, nullable: true })
-  multiAsset?: boolean;
+  multi_asset?: boolean;
 
   @Column({ type: 'text', nullable: false })
-  name: string;
+  name?: string;
 
   @Column({ type: 'text', default: '506b', nullable: true })
-  offeringType?: string;
+  offering_type?: string;
+
+  @ManyToOne(() => Organizations)
+  @JoinColumn({ name: 'organization_id' })
+  organization?: Organizations;
 
   @Column({ type: 'text', nullable: true })
-  portfolioCompany?: string;
+  portfolio_company?: string;
 
-  @ManyToOne(() => Identities)
-  @JoinColumn({ name: 'identity_id' })
-  identity: Identities;
+  @Column({ type: 'text', default: 'Micro SPV', nullable: true })
+  product_type?: string;
 
   @Column({ type: 'boolean', default: false, nullable: true })
   public?: boolean;
 
   @Column({ type: 'text', nullable: true })
-  shortMemo?: string;
+  short_memo?: string;
 
   @Column({ type: 'timestamp with time zone', nullable: true })
-  signingDate?: Date;
+  signing_date?: Date;
 
   @Column({ type: 'text', nullable: true })
   source?: string;
@@ -126,56 +146,37 @@ export class Deals {
   status?: string;
 
   @Column({ type: 'text', nullable: true })
-  tagLine?: string;
+  tag_line?: string;
 
   @Column({ type: 'numeric', precision: 15, scale: 2, default: 0, nullable: true })
-  targetRaiseAmount?: number;
+  target_raise_amount?: number;
 
   @Column({ type: 'text', nullable: true })
-  templateGoogleDriveId?: string;
+  template_google_drive_id?: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 0, nullable: true })
-  totalCarry?: number;
+  total_carry?: number;
 
   @UpdateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  updatedAt?: Date;
-
-  @Column({ type: 'uuid', default: () => 'auth.uid()', nullable: true })
-  userId?: string;
-
-  @ManyToOne(() => Organizations)
-  @JoinColumn({ name: 'organization_id' })
-  organization: Organizations;
+  updated_at?: Date;
 
   @Column({ type: 'uuid', nullable: true })
-  updatedBy?: string;
+  updated_by?: string;
 
-  @Column({ type: 'text', default: 'Micro SPV', nullable: true })
-  productType?: string;
+  @Column({ type: 'uuid', default: () => 'auth.uid()', nullable: true })
+  user_id?: string;
 
-  @Column({ type: 'text', default: 'Accredited Investors (3c1)', nullable: true })
-  investorType?: string;
-
-  @Column({ type: 'text', default: 'None', nullable: true })
-  financialStatements?: string;
-
-  @ManyToOne(() => BankAccounts)
-  @JoinColumn({ name: 'bank_account_id' })
-  bankAccount: BankAccounts;
-
-  @OneToMany(() => Closes, (close) => close.deal)
-  closes?: Closes[];
+  @Column({ type: 'text', nullable: true })
+  website_url?: string;
 }
 
-
 export interface DealsRelations {
-  // describe navigational properties here
   investments?: Investments[];
   closes?: Closes[];
   assets?: Assets[];
   entity?: Entities;
   organization?: Organizations;
-  fmIdentity?: Identities;
+  fund_manager_id?: Identities;
 }
 
 export type DealsWithRelations = Deals & DealsRelations;
