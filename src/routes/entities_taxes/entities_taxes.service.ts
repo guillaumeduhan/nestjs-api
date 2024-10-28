@@ -3,6 +3,8 @@ import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SlackService } from 'nestjs-slack';
+import * as winston from 'winston';
+import 'winston-daily-rotate-file';
 
 @Injectable()
 export class EntityTaxesService {
@@ -10,6 +12,25 @@ export class EntityTaxesService {
     private slackService: SlackService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) { }
+
+  private createLogger(entityId: string): winston.Logger {
+    return winston.createLogger({
+      transports: [
+        new winston.transports.DailyRotateFile({
+          dirname: 'logs',
+          filename: `[ENTITIES] %DATE% ${entityId}.log`,
+          datePattern: 'YYYY-MM-DD',
+          maxFiles: '14d',
+          zippedArchive: true,
+          format: winston.format.combine(
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
+          ),
+          level: 'info',
+        }),
+      ],
+    });
+  }
 
   async create(req: any) {
     const { body: entityTax, user } = req;
@@ -38,7 +59,7 @@ export class EntityTaxesService {
       }
       const { entity_name, id } = data;
 
-      this.slackService.sendText(`✅ [ENTITY] Successfully created 👉 ${entity_name} 👉 id: https://v4.allocations.com/entities_taxes/${id}`, {
+      this.slackService.sendText(`✅ [ENTITY] Successfully created 👉 ${entity_name} 👉 id: ${process.env.PRODUCTION_URL}/entities_taxes/${id}`, {
         channel: "taxes-logs-v4"
       });
       return data;
@@ -108,7 +129,7 @@ export class EntityTaxesService {
 
       const { entity_name, id } = data;
 
-      this.slackService.sendText(`🟢 [ENTITY] Updated 👉 ${entity_name} 👉 https://v4.allocations.com/entities_taxes/${id}`, {
+      this.slackService.sendText(`🟢 [ENTITY] Updated 👉 ${entity_name} 👉 ${process.env.PRODUCTION_URL}/entities_taxes/${id}`, {
         channel: "taxes-logs-v4"
       });
 
@@ -128,13 +149,13 @@ export class EntityTaxesService {
 
       const { history_id }: any = dataHistory;
 
-      this.slackService.sendText(`⏱️ [ENTITY] History saved 👉 ${entity_name} 👉 https://v4.allocations.com/entities_taxes/${id}/history/${history_id}`, {
+      this.slackService.sendText(`⏱️ [ENTITY] History saved 👉 ${entity_name} 👉 ${process.env.PRODUCTION_URL}/entities_taxes/${id}/history/${history_id}`, {
         channel: "taxes-logs-v4"
       });
 
       return data;
     } catch (error) {
-      this.slackService.sendText(`🔴 [ENTITY] Update failed 👉 ${error.message} 👉 https://v4.allocations.com/entities_taxes/${paramId}`, {
+      this.slackService.sendText(`🔴 [ENTITY] Update failed 👉 ${error.message} 👉 ${process.env.PRODUCTION_URL}/entities_taxes/${paramId}`, {
         channel: "taxes-logs-v4"
       });
       throw new HttpException({
@@ -171,22 +192,21 @@ export class EntityTaxesService {
       // timer starts
       const time_0 = performance.now();
 
-      // ici je commence à sauvegarder le log dans Logs
-      // le fichier prendra le nom suivant: (format date YYYY-MM-DD HH:mm:ss — entityId).(extension)
-      // la première ligne sera : "Starting to generate tax id for (entityId)"
-      // ... à la fin, il y aura écrit: "Tax entity id successfully generated for (entityId), X entities, X deals, X investments et X investments-taxes also generated"
-      // dès que terminé, je ferme et j'enregistre le fichier log et j'arrête d'enregistrer les logs
+      const logger = this.createLogger(entityId);
 
+      // Log the start of the process
+      logger.info(`⏱️ Starting to generate tax id for ${entityId}`);
 
       // timer ends
       const time_1 = performance.now();
-      console.log('Call to controller took ' + (time_1 - time_0) + ' milliseconds.');
+
+      logger.info('⏱️ Call to controller took ' + (time_1 - time_0) + ' milliseconds.');
+
+      // Log the start of the process
+      logger.info(`✅ Successfully generated entities-taxes for entity: ${entityId}`);
 
       return data
     } catch (error) {
-      this.slackService.sendText(`🔴 [ENTITY] Failed to generate 👉 ${error.message}`, {
-        channel: "taxes-logs-v4"
-      });
       throw new HttpException(
         {
           status: error.status,

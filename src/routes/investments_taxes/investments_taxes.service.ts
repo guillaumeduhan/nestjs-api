@@ -3,6 +3,8 @@ import { SUPABASE_CLIENT } from '@/providers/supabase.providers';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SlackService } from 'nestjs-slack';
+import * as winston from 'winston';
+import 'winston-daily-rotate-file';
 
 @Injectable()
 export class InvestmentsTaxesService {
@@ -10,6 +12,25 @@ export class InvestmentsTaxesService {
     private slackService: SlackService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) { }
+
+  private createLogger(investmentId: string): winston.Logger {
+    return winston.createLogger({
+      transports: [
+        new winston.transports.DailyRotateFile({
+          dirname: 'logs',
+          filename: `[INVESTMENTS] %DATE% ${investmentId}.log`,
+          datePattern: 'YYYY-MM-DD',
+          maxFiles: '14d',
+          zippedArchive: true,
+          format: winston.format.combine(
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
+          ),
+          level: 'info',
+        }),
+      ],
+    });
+  }
 
   async create(req: any) {
     const { body: investmentTax, user } = req;
@@ -138,6 +159,57 @@ export class InvestmentsTaxesService {
         message: error.message
       },
         HttpStatus.FORBIDDEN);
+    }
+  }
+
+  async generate(investmentId: string, req: any, taxYear: string = '2024', fundManagerApproval: boolean = false) {
+    try {
+      if (!investmentId) {
+        throw new HttpException(
+          "Missing investment id",
+          HttpStatus.FORBIDDEN,
+        );
+      };
+
+      const { data, error } = await this.supabase
+        .from('investments')
+        .select('*')
+        .eq('id', investmentId)
+        .single();
+
+      if (error) {
+        throw new HttpException(
+          `Investment not found: ${investmentId}`,
+          HttpStatus.FORBIDDEN,
+        );
+      };
+
+      // timer starts
+      const time_0 = performance.now();
+
+      const logger = this.createLogger(investmentId);
+
+      // Log the start of the process
+      logger.info(`⏱️ Starting to generate tax id for ${investmentId}`);
+
+      // timer ends
+      const time_1 = performance.now();
+
+      logger.info('⏱️ Call to controller took ' + (time_1 - time_0) + ' milliseconds.');
+
+      // Log the start of the process
+      logger.info(`✅ Successfully generated investments-taxes for entity: ${investmentId}`);
+
+      return data
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to generate Investment tax',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN,
+      );
     }
   }
 }

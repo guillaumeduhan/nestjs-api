@@ -50,4 +50,13 @@ export class InvestmentsTaxesController {
   async update(@Param('id') id: string, @Request() req) {
     return await this.investmentTaxesService.update(id, req);
   }
+
+  @UseGuards(SupabaseGuard)
+  @Post('generate/:investmentId')
+  @ApiOperation({ summary: 'Generate a new entity taxes & saves it to database' })
+  @ApiResponse({ status: 201, description: 'Entity tax generated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async generate(@Param('investmentId') investmentId: string, @Request() req) {
+    return await this.investmentTaxesService.generate(investmentId, req);
+  }
 }
