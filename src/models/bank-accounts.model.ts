@@ -16,18 +16,18 @@ export class BankAccounts {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', nullable: true })
-  accountName?: string;
-
   @ManyToOne(() => Addresses)
   @JoinColumn({ name: 'address_id' })
   address: Addresses;
 
+  @Column({ type: 'text', nullable: true })
+  account_name?: string;
+
   @CreateDateColumn({ type: 'timestamp without time zone', default: () => 'now()', nullable: false })
-  createdAt: Date;
+  created_at?: Date;
 
   @Column({ type: 'text', nullable: true })
-  otherDetails?: string;
+  other_details?: string;
 
   @ManyToOne(() => Organizations)
   @JoinColumn({ name: 'organization_id' })
@@ -43,11 +43,11 @@ export class BankAccounts {
   type?: string;
 
   @UpdateDateColumn({ type: 'timestamp without time zone', default: () => 'now()', nullable: false })
-  updatedAt: Date;
+  updated_at?: Date;
 
   @ManyToOne(() => Users)
   @JoinColumn({ name: 'updated_by' })
-  updatedBy?: Users;
+  updated_by?: Users;
 
   @ManyToOne(() => Users)
   @JoinColumn({ name: 'user_id' })

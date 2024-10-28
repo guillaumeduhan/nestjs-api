@@ -19,13 +19,13 @@ export class Addresses {
   city?: string;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  createdAt?: Date;
+  created_at?: Date;
 
   @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @Column({ type: 'text', nullable: true })
-  deletedBy?: string;
+  deleted_by?: string;
 
   @Column({ type: 'text', nullable: true })
   country?: string;
@@ -34,10 +34,10 @@ export class Addresses {
   nickname?: string;
 
   @Column({ type: 'text', nullable: true })
-  phoneNumber?: string;
+  phone_number?: string;
 
   @Column({ type: 'text', nullable: true })
-  postalCode?: string;
+  postal_code?: string;
 
   @Column({ type: 'text', nullable: true })
   region?: string;
@@ -46,17 +46,17 @@ export class Addresses {
   state?: string;
 
   @Column({ type: 'text', nullable: true })
-  streetAddressLine1?: string;
+  street_address_line1?: string;
 
   @Column({ type: 'text', nullable: true })
-  streetAddressLine2?: string;
+  street_address_line2?: string;
 
   @UpdateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  updatedAt?: Date;
+  updated_at?: Date;
 
   @ManyToOne(() => Users)
   @JoinColumn({ name: 'updated_by' })
-  updatedBy?: Users;
+  updated_by?: Users;
 
   @ManyToOne(() => Users)
   @JoinColumn({ name: 'user_id' })

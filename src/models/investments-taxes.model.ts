@@ -18,10 +18,10 @@ export class InvestmentsTaxes {
   id: string;
 
   @Column({ type: 'text', nullable: true })
-  calculatorVersion?: string;
+  calculator_version?: string;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  createdAt?: Date;
+  created_at?: Date;
 
   @ManyToOne(() => Deals)
   @JoinColumn({ name: 'deal_id' })
@@ -32,127 +32,127 @@ export class InvestmentsTaxes {
   entity: Entities;
 
   @Column({ type: 'text', nullable: true })
-  flaggedByEmail?: string;
+  flagged_by_email?: string;
 
   @Column({ type: 'timestamp with time zone', nullable: true })
-  flaggedForUpdateAt?: Date;
+  flagged_for_update_at?: Date;
 
   @Column({ type: 'uuid', nullable: true })
-  investmentId?: string;
+  investment_id?: string;
 
   @Column({ type: 'numeric', nullable: true })
-  investorBeginningCapitalAccountAmount?: number;
+  investor_beginning_capital_account_amount?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorBeginningCapitalPercentage?: number;
+  investor_beginning_capital_percentage?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorBeginningLossPercentage?: number;
+  investor_beginning_loss_percentage?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorBeginningProfitPercentage?: number;
+  investor_beginning_profit_percentage?: number;
 
   @Column({ type: 'text', nullable: true })
-  investorCity?: string;
+  investor_city?: string;
 
   @Column({ type: 'numeric', nullable: true })
-  investorContributions?: number;
+  investor_contributions?: number;
 
   @Column({ type: 'text', nullable: true })
-  investorCountry?: string;
+  investor_country?: string;
 
   @Column({ type: 'numeric', nullable: true })
-  investorCurrentYearNetIncomeLoss?: number;
+  investor_current_year_net_income_loss?: number;
 
   @Column({ type: 'date', nullable: true })
-  investorDateOfFormation?: Date;
+  investor_date_of_formation?: Date;
 
   @Column({ type: 'text', nullable: true })
-  investorDisregardedOwnerName?: string;
+  investor_disregarded_owner_name?: string;
 
   @Column({ type: 'text', nullable: true })
-  investorDisregardedOwnerTaxId?: string;
+  investor_disregarded_owner_tax_id?: string;
 
   @Column({ type: 'numeric', nullable: true })
-  investorDistributions?: number;
+  investor_distributions?: number;
 
   @Column({ type: 'text', nullable: true })
-  investorEmail?: string;
+  investor_email?: string;
 
   @Column({ type: 'numeric', nullable: true })
-  investorEndingCapitalAccountAmount?: number;
+  investor_ending_capital_account_amount?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorEndingCapitalPercentage?: number;
+  investor_ending_capital_percentage?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorEndingLossPercentage?: number;
+  investor_ending_loss_percentage?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorEndingProfitPercentage?: number;
+  investor_ending_profit_percentage?: number;
 
   @Column({ type: 'boolean', nullable: true })
-  investorEntityIsDisregarded?: boolean;
+  investor_entity_is_disregarded?: boolean;
 
   @Column({ type: 'text', nullable: true })
-  investorEntityType?: string;
+  investor_entity_type?: string;
 
   @Column({ type: 'boolean', nullable: true })
-  investorFcAndSoiAndDApplicable?: boolean;
+  investor_fc_and_soi_and_d_applicable?: boolean;
 
   @Column({ type: 'boolean', nullable: true })
-  investorForeignTaxCreditLimitationApplicable?: boolean;
+  investor_foreign_tax_credit_limitation_applicable?: boolean;
 
   @Column({ type: 'boolean', nullable: true })
-  investorIsUsDomestic?: boolean;
+  investor_is_us_domestic?: boolean;
 
   @Column({ type: 'text', nullable: true })
-  investorLegalName?: string;
+  investor_legal_name?: string;
 
   @Column({ type: 'numeric', nullable: true })
-  investorOtherDeductions?: number;
+  investor_other_deductions?: number;
 
   @Column({ type: 'numeric', nullable: true })
-  investorOwnershipPercent?: number;
+  investor_ownership_percent?: number;
 
   @Column({ type: 'text', nullable: true })
-  investorPostalCode?: string;
+  investor_postal_code?: string;
 
   @Column({ type: 'text', nullable: true })
-  investorState?: string;
+  investor_state?: string;
 
   @Column({ type: 'text', nullable: true })
-  investorStreetAddress?: string;
+  investor_street_address?: string;
 
   @Column({ type: 'text', nullable: true })
-  investorTaxId?: string;
+  investor_tax_id?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  investorIdentitiesId?: string;
+  investor_identities_id?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  k1FilesId?: string;
+  k1_files_id?: string;
 
   @Column({ type: 'timestamp with time zone', nullable: true })
-  lastPrintedAt?: Date;
+  last_printed_at?: Date;
 
   @Column({ type: 'text', nullable: true })
-  legacyRecordId?: string;
+  legacy_record_id?: string;
 
   @Column({ type: 'integer', nullable: true })
-  partnerIndex?: number;
+  partner_index?: number;
 
   @Column({ type: 'numeric', default: 0, nullable: false })
-  recordVersion: number;
+  record_version: number;
 
   @Column({ type: 'text', nullable: true })
   status?: string;
 
   @Column({ type: 'text', nullable: true })
-  taxYear?: string;
+  tax_year?: string;
 
   @UpdateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  updatedAt?: Date;
+  updated_at?: Date;
 
   constructor(partial: Partial<InvestmentsTaxes> = {}) {
     Object.assign(this, partial);

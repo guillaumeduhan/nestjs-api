@@ -18,49 +18,46 @@ export class Identities {
 
   @ManyToOne(() => Addresses)
   @JoinColumn({ name: 'address_id' })
-  addressId: Addresses;
+  address_id: Addresses;
 
   @Column({ type: 'text', nullable: true })
-  countryOfCitizenship?: string;
+  country_of_citizenship?: string;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  createdAt?: Date;
-
-  @Column({ type: 'text', nullable: true })
-  deletedBy?: string;
-
-  @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
-  deletedAt?: Date;
-
-  @Column({ type: 'text', nullable: true, default: 'pending' })
-  status?: string;
+  created_at?: Date;
 
   @Column({ type: 'date', nullable: true })
-  dateOfFormation?: Date;
+  date_of_formation?: Date;
+
+  @Column({ type: 'text', nullable: true })
+  deleted_by?: string;
+
+  @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
+  deleted_at?: Date;
 
   @Column({ type: 'text', nullable: true })
   email?: string;
 
   @Column({ type: 'text', nullable: true })
-  entityType?: string;
+  entity_type?: string;
 
   @Column({ type: 'text', nullable: true })
-  firstName?: string;
+  first_name?: string;
 
   @Column({ type: 'boolean', nullable: true, default: false })
-  isDisregarded?: boolean;
+  is_disregarded?: boolean;
 
   @Column({ type: 'text', nullable: true })
-  lastName?: string;
+  last_name?: string;
 
   @Column({ type: 'text', nullable: false })
-  legalName: string;
+  legal_name: string;
 
   @Column({ type: 'text', nullable: true })
-  mailingAddressId?: string;
+  mailing_address_id?: string;
 
   @Column({ type: 'text', nullable: true })
-  middleName?: string;
+  middle_name?: string;
 
   @Column({ type: 'text', nullable: true })
   nickname?: string;
@@ -69,48 +66,49 @@ export class Identities {
   phone?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  physicalAddressId?: string;
+  physical_address_id?: string;
 
   @Column({ type: 'text', nullable: true })
   provider?: string;
 
   @Column({ type: 'text', nullable: true })
-  providerId?: string;
+  provider_id?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  signer_id?: string;
+
+  @ManyToOne(() => Identities)
+  @JoinColumn({ name: 'signer_id' })
+  signer: Identities;
 
   @Column({ type: 'text', nullable: true })
-  taxId?: string;
+  tax_id?: string;
 
   @Column({ type: 'text', nullable: true, default: 'None' })
-  taxIdType?: string;
+  tax_id_type?: string;
 
   @Column({ type: 'text', nullable: true })
   type?: string;
 
   @UpdateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: true })
-  updatedAt?: Date;
+  updated_at?: Date;
 
   @Column({ type: 'uuid', nullable: true })
-  updatedBy?: string;
+  updated_by?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  userId?: string;
+  user_id?: string;
 
   @Column({ type: 'boolean', nullable: true, default: false })
-  usDomestic?: boolean;
+  us_domestic?: boolean;
 
-  @Column({ type: 'uuid', nullable: true })
-  signerId?: string;
-
-  // Many-to-One relation to reference self (foreign key)
-  @ManyToOne(() => Identities)
-  @JoinColumn({ name: 'signer_id' })
-  signer: Identities;
+  @Column({ type: 'text', nullable: true, default: 'pending' })
+  status?: string;
 }
 
 export interface IdentitiesRelations {
-  // describe navigational properties here
   addresses?: Addresses;
-  deal?: Deals;
+  deals?: Deals;
   identity?: IdentitiesRelations;
 }
 

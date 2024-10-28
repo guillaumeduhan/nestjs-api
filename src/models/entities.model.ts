@@ -19,85 +19,85 @@ import { LedgerWithRelations } from './ledger.model';
 import { Organizations } from './organizations.model';
 
 @Entity({ schema: 'v4', name: 'entities' })
-@Index('idx_entities_user_id', ['userId'])
-@Index('idx_entities_organization_id', ['organizationId'])
-@Index('idx_entities_partnership_representative_id', ['partnershipRepresentativeId'])
-@Index('idx_entities_partnership_representative_individual_id', ['partnershipRepresentativeIndividualId'])
-@Index('idx_entities_parent_entity_id', ['parentEntityId'])
-@Index('idx_entities_physical_address_id', ['physicalAddressId'])
-@Index('idx_entities_mailing_address_id', ['mailingAddressId'])
+@Index('idx_entities_user_id', ['user_id'])
+@Index('idx_entities_organization_id', ['organization_id'])
+@Index('idx_entities_partnership_representative_id', ['partnership_representative_id'])
+@Index('idx_entities_partnership_representative_individual_id', ['partnership_representative_individual_id'])
+@Index('idx_entities_parent_entity_id', ['parent_entity_id'])
+@Index('idx_entities_physical_address_id', ['physical_address_id'])
+@Index('idx_entities_mailing_address_id', ['mailing_address_id'])
 
 export class Entities {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id?: string;
 
   @Column({ type: 'text', nullable: true })
-  countryOfFormation?: string;
-
-  @ManyToOne(() => Closes)
-  @JoinColumn({ name: 'closes' })
-  closes: Closes;
+  country_of_formation?: string;
 
   @CreateDateColumn({ type: 'timestamp without time zone', default: () => 'now()' })
-  createdAt?: Date;
+  created_at?: Date;
 
   @Column({ type: 'date', nullable: true })
-  dateOfFormation?: Date;
+  date_of_formation?: Date;
 
   @Column({ type: 'text', nullable: true })
-  deletedBy?: string;
+  deleted_by?: string;
 
   @DeleteDateColumn({ type: 'timestamp without time zone', nullable: true })
-  deletedAt?: Date;
-
-  @ManyToOne(() => Identities)
-  @JoinColumn({ name: 'fund_manager_identity_id' })
-  fundManagerIdentity: Identities;
+  deleted_at?: Date;
 
   @Column({ type: 'text', nullable: true })
   ein?: string;
 
+  @ManyToOne(() => Deals)
+  @JoinColumn({ name: 'deals' })
+  deals?: Deals[];
+
+  @ManyToOne(() => Identities)
+  @JoinColumn({ name: 'fund_manager_identity_id' })
+  fund_manager_identity?: Identities;
+
   @Column({ type: 'uuid', nullable: true })
-  identityId?: string;
+  identity_id?: string;
 
   @Column({ type: 'text', nullable: true, default: 'delaware' })
   jurisdiction?: string;
 
   @Column({ type: 'text', nullable: true })
-  legalName?: string;
+  legal_name?: string;
 
   @Column({ type: 'uuid', nullable: true })
-  mailingAddressId?: string;
+  mailing_address_id?: string;
 
   @Column({ type: 'text', nullable: false })
-  name: string;
+  name?: string;
 
   @ManyToOne(() => Organizations)
   @JoinColumn({ name: 'organization_id' })
-  organization: Organizations;
+  organization?: Organizations;
 
   @Column({ type: 'uuid', nullable: true })
-  parentEntityId?: string;
+  parent_entity_id?: string;
 
   @ManyToOne(() => Identities)
   @JoinColumn({ name: 'partnership_representative_id' })
-  partnershipRepresentative: Identities;
+  partnership_representative?: Identities;
 
   @ManyToOne(() => Identities)
   @JoinColumn({ name: 'partnership_representative_individual_id' })
-  partnershipRepresentativeIndividual: Identities;
+  partnership_representative_individual?: Identities;
 
   @Column({ type: 'uuid', nullable: true })
-  physicalAddressId?: string;
+  physical_address_id?: string;
 
   @Column({ type: 'text', nullable: true })
   provider?: string;
 
   @Column({ type: 'text', nullable: true })
-  providerId?: string;
+  provider_id?: string;
 
   @Column({ type: 'text', nullable: true })
-  regionOfFormation?: string;
+  region_of_formation?: string;
 
   @Column({ type: 'text', nullable: true, default: 'pending' })
   status?: string;
@@ -106,22 +106,26 @@ export class Entities {
   structure?: string;
 
   @Column({ type: 'text', nullable: true })
-  taxesProvider?: string;
+  taxes_provider?: string;
 
   @Column({ type: 'text', nullable: true })
-  taxesProviderId?: string;
+  taxes_provider_id?: string;
 
   @Column({ type: 'text', nullable: true })
   type?: string;
 
   @UpdateDateColumn({ type: 'timestamp without time zone', default: () => 'now()' })
-  updatedAt?: Date;
+  updated_at?: Date;
 
   @Column({ type: 'uuid', nullable: true })
-  updatedBy?: string;
+  updated_by?: string;
 
   @Column({ type: 'uuid', nullable: false, default: () => 'auth.uid()' })
-  userId: string;
+  user_id?: string;
+
+  @ManyToOne(() => Closes)
+  @JoinColumn({ name: 'closes' })
+  closes?: Closes;
 
   constructor(partial: Partial<Entities> = {}) {
     Object.assign(this, partial);
@@ -129,17 +133,16 @@ export class Entities {
 }
 
 export interface EntitiesRelations {
-  // describe navigational properties here
   addresses?: Addresses;
   closes?: Closes[];
   deals?: Deals[];
-  entitiesTaxes?: EntitiesTaxes[];
-  entitiesTaxesMetadata?: any[]; // TODO
-  investmentsTaxes?: InvestmentsTaxes[];
+  entities_taxes?: EntitiesTaxes[];
+  entities_taxes_metadata?: any[]; // TODO: missing
+  investments_taxes?: InvestmentsTaxes[];
   ledgers?: LedgerWithRelations[];
   organization?: Organizations;
-  partnershipRepresentative?: Identities;
-  partnershipRepresentativeDesignatedIndividual?: Identities;
+  partnership_representative?: Identities;
+  partnership_representative_designated_individual?: Identities;
 }
 
 export type EntitiesWithRelations = Entities & EntitiesRelations;
