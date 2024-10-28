@@ -8,7 +8,9 @@ import { EntityTaxesService } from './entities_taxes.service';
 @Module({
   controllers: [EntityTaxesController],
   providers: [EntityTaxesService],
-  imports: [SupabaseModule, ConfigModule,
+  imports: [
+    SupabaseModule,
+    ConfigModule,
     SlackModule.forRoot({
       type: 'webhook',
       channels: [
@@ -21,7 +23,7 @@ import { EntityTaxesService } from './entities_taxes.service';
           url: "https://hooks.slack.com/services/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"
         }
       ]
-    })
+    }),
   ],
 })
 export class EntityTaxesModule { }

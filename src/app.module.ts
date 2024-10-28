@@ -13,7 +13,7 @@ import { InvestmentsTaxesModule } from './routes/investments_taxes/investments_t
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // makes ConfigModule globally available
+      isGlobal: true,
     }),
     SlackModule.forRoot({
       type: 'webhook',

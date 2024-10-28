@@ -4,14 +4,15 @@ Repository containing the Tax Allocation API only for internal requests. Built w
 
 ## Table of Contents
 - [Getting Started](#getting-started)
-- [Environment Variables](#env)
 - [API Prefix](#prefix)
-- [Ping Endpoint](#ping)
 - [Authentication](#authentication)
-- [Swagger Documentation](#swagger)
+- [Environment Variables](#env)
+- [Ping Endpoint](#ping)
 - [Guides](#guides)
   - [Create a New Route](#create-a-new-route)
   - [Modules, Controllers & Services](#modules-controllers--services)
+- [Swagger Documentation](#swagger)
+- [Logs](#logs)
 - [Taxes](#taxes)
   - [Routes (Deprecated)](#routes-old-version-probably-deprecated)
 - [Taxes Calculator Service](#taxes-calculator-service)
@@ -182,3 +183,15 @@ Here is the calculation generation service for creating our `entities_taxes` and
 | `hoistConfidenceReports`                          | Aggregates multiple confidence reports, providing an average confidence score and merged drop reasons.                |
 | `useNumericValue`                                 | Returns the first valid numeric value from a list of inputs, or a specified default value if none are found.          |
 | `useValue`                                        | Returns the first non-empty string from a list of inputs, or `null` if none are found.                                |
+
+### Logs
+
+This application automatically generates logs for key actions and events to help with tracking and debugging.
+
+Logs are saved in two places:
+
+- **Local Logs**: Logs are saved in the `logs` directory. Each log file is created per entity, named using the format `entityId %DATE%.log` or `investmentId %DATE%.log`, where `%DATE%` is the current date & entityId or investmentId corresponds to taxes we want to generate. The log captures timestamps, action messages, and processing times to provide insights into the execution flow and performance of each action.
+  
+- **Slack Notifications**: In addition to local logs, important events are sent as notifications to a designated Slack channel, `taxes-logs-v4`. This includes messages for successful actions (like entity creation or updates) and errors encountered during processing. This setup provides real-time visibility into the status and health of various processes.
+
+Logs are automatically triggered by certain actions within the `EntityTaxesService` methods. Each log records the beginning and end of a process, any issues encountered, and performance metrics.

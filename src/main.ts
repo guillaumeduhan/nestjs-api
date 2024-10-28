@@ -5,11 +5,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // prefix
+  // prefix 
   app.setGlobalPrefix('v4');
   // swagger
   if (process.env.NODE_ENV !== 'production') {
-
     const config = new DocumentBuilder()
       .setTitle('Tax-Api-V4')
       .setDescription('The Tax-Api-V4 API description')
