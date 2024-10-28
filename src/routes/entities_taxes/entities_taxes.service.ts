@@ -37,7 +37,7 @@ export class EntityTaxesService {
         );
       }
       const { entity_name, id } = data;
-      
+
       this.slackService.sendText(`✅ [ENTITY] Successfully created 👉 ${entity_name} 👉 id: https://v4.allocations.com/entities_taxes/${id}`, {
         channel: "taxes-logs-v4"
       });
@@ -143,6 +143,58 @@ export class EntityTaxesService {
         message: error.message
       },
         HttpStatus.FORBIDDEN);
+    }
+  }
+
+  async generate(entityId: string, req: any, taxYear: string = '2024', fundManagerApproval: boolean = false) {
+    try {
+      if (!entityId) {
+        throw new HttpException(
+          "Missing entity id",
+          HttpStatus.FORBIDDEN,
+        );
+      };
+
+      const { data, error } = await this.supabase
+        .from('entities')
+        .select('*')
+        .eq('id', entityId)
+        .single();
+
+      if (error) {
+        throw new HttpException(
+          `Entity not found: ${entityId}`,
+          HttpStatus.FORBIDDEN,
+        );
+      };
+
+      // timer starts
+      const time_0 = performance.now();
+
+      // ici je commence à sauvegarder le log dans Logs
+      // le fichier prendra le nom suivant: (format date YYYY-MM-DD HH:mm:ss — entityId).(extension)
+      // la première ligne sera : "Starting to generate tax id for (entityId)"
+      // ... à la fin, il y aura écrit: "Tax entity id successfully generated for (entityId), X entities, X deals, X investments et X investments-taxes also generated"
+      // dès que terminé, je ferme et j'enregistre le fichier log et j'arrête d'enregistrer les logs
+
+
+      // timer ends
+      const time_1 = performance.now();
+      console.log('Call to controller took ' + (time_1 - time_0) + ' milliseconds.');
+
+      return data
+    } catch (error) {
+      this.slackService.sendText(`🔴 [ENTITY] Failed to generate 👉 ${error.message}`, {
+        channel: "taxes-logs-v4"
+      });
+      throw new HttpException(
+        {
+          status: error.status,
+          error: 'Failed to generate entity tax',
+          message: error.message
+        },
+        HttpStatus.FORBIDDEN,
+      );
     }
   }
 }
