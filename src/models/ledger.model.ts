@@ -13,8 +13,8 @@ import { LedgerCategories } from './ledger-categories.model';
 @Entity({ schema: 'public', name: 'ledger' })
 export class Ledger {
   @ManyToOne(() => LedgerCategories)
-  @JoinColumn({ name: 'categories_id' })
-  category: LedgerCategories;
+  @JoinColumn({ name: 'ledger_categories_id' })
+  ledger_categories_id: LedgerCategories;
 
   @CreateDateColumn({ type: 'timestamp with time zone', default: () => 'now()', nullable: false })
   created_at?: Date;

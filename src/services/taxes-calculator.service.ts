@@ -553,7 +553,7 @@ export class TaxCalculatorService {
     const year_deal_contributions_data = await this.dealContributions(entity.deals ?? [], tax_year, false);
 
     const current_year_management_fee_ledgers = (entity.ledgers ?? []).filter(
-      (l: any) => l.categories_id === this._MANAGEMENT_FEES_CATEGORY_ID && dayjs(l.entry_date).isSame(tax_year, 'year')
+      (l: any) => l.ledger_categories_id === this._MANAGEMENT_FEES_CATEGORY_ID && dayjs(l.entry_date).isSame(tax_year, 'year')
     );
 
     for (const deal of entity.deals ?? []) {
