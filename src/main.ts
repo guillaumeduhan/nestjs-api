@@ -10,10 +10,10 @@ async function bootstrap() {
   // swagger
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Tax-Api-V4')
-      .setDescription('The Tax-Api-V4 API description')
+      .setTitle('Api-V4')
+      .setDescription('The Api-V4 API description')
       .setVersion('1.0')
-      .addTag('tax-api-v4')
+      .addTag('api-v4')
       .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
         'access-token',)
       .build();
